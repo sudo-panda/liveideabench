@@ -272,7 +272,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="LiveIdeaBench - LLM Scientific Idea Evaluation Benchmark")
     parser.add_argument('--idea_model', type=str, help='Idea generation model name')
     parser.add_argument('--start_from_last_run', action='store_true', help='Continue from the last run')
-    parser.add_argument('--provider', type=str, choices=['openrouter', 'gemini', 'stepfun', 'ollama'],
+    parser.add_argument('--provider', type=str, choices=['openrouter', 'gemini', 'stepfun', 'ollama', 'vllm'],
                        help='Model provider, default is inferred from the model name')
     parser.add_argument('--keyword', nargs='+', help='Specify keywords for idea generation, can be a single keyword or a list of keywords; if not specified, all keywords will be used')
     

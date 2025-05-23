@@ -4,3 +4,7 @@ logs
 figs
 gitstat.py
 .mailmap
+*.pyc
+__pycache__/
+data/ideabench.db
+csvs/view.csv

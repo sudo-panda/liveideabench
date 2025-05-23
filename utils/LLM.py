@@ -87,6 +87,10 @@ class BaseLLM:
                 api_key=api_key
             )
 
+        elif self.provider == "vllm":
+            from vllm import LLM, SamplingParams
+            self.client = LLM(model=self.model_name)
+
         else:
             # Default to OpenRouter
             api_key = config.get_api_key("openrouter")
@@ -109,6 +113,8 @@ class BaseLLM:
         """
         if self.provider == "gemini":
             return self._gemini_completion(prompt, system_prompt)
+        elif self.provider == "vllm":
+            return self._vllm_completion(prompt, system_prompt)
         else:
             return self._openai_compatible_completion(prompt, system_prompt)
 
@@ -132,6 +138,27 @@ class BaseLLM:
         response = model.generate_content(prompt)
         return response.text
 
+    def _vllm_completion(self, prompt: str, system_prompt: Optional[str] = None) -> str:
+        """Execute VLLM API completion request
+
+        Args:
+            prompt: User prompt
+            system_prompt: Optional system prompt
+
+        Returns:
+            VLLM model's response text
+        """
+        sampling_params = {
+            "temperature": 1.0,
+            "max_tokens": None
+        }
+
+        # Build the prompt
+        if system_prompt:
+            prompt = f"{system_prompt}\n\n{prompt}"
+
+        response = self.client.generate([prompt], SamplingParams(**sampling_params))
+        return response.outputs[0].text
 
     def _openai_compatible_completion(self, prompt: str, system_prompt: Optional[str] = None) -> str:
         """Execute completion request for OpenAI-compatible API

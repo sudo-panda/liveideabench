@@ -8,23 +8,24 @@ import os
 from typing import Dict, List, Optional
 
 # Define the supported model providers
-PROVIDER_NAMES = ["openrouter", "ollama", "stepfun", "gemini", "aigcbest", "default"]
+PROVIDER_NAMES = ["openrouter", "ollama", "stepfun", "gemini", "aigcbest", "vllm", "default"]
 
 # Define the critic models (stronger models)
 CRITIC_MODELS = [
-    "anthropic/claude-3.7-sonnet:thinking",
-    "openai/o3-mini-high",
-    "openai/gpt-4.5-preview", 
+    "Qwen/Qwen2.5-72B-Instruct",
+    "Qwen/Qwen2.5-32B-Instruct",
+    "mistralai/Ministral-8B-Instruct-2410",
     # "openai/o1",           # Excluded due to openai exceeding 2 models
     # "anthropic/claude-3.7", # Excluded as it shares the same base model as 'thinking'
-    "qwen/qwq-32b",
-    "deepseek/deepseek-r1",
-    "google/gemini-2.0-flash-thinking-exp:free",
-    "google/gemini-2.0-pro-exp-02-05:free",
-    "qwen/qwen-max",
-    "deepseek/deepseek-chat", # (v3)
+    "meta-llama/Llama-3.3-70B-Instruct",
+    "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B"
+    "deepseek-ai/DeepSeek-R1",
+    "meta-llama/Llama-4-Maverick-17B-128E-Instruct",
+    "microsoft/Phi-4-reasoning-plus",
+    "microsoft/phi-4",
+    "deepseek-ai/DeepSeek-V3-0324"
     # "google/gemini-2.0-flash-exp:free", # Excluded due to google exceeding 2 models
-    "anthropic/claude-3.5-sonnet"
+    "mistralai/Mistral-Small-3.1-24B-Instruct-2503"
 ]
 
 IDEA_MODELS = [
@@ -60,6 +61,7 @@ IDEA_MODELS = [
     "amazon/nova-lite-v1",
     "qwen/qwen-2.5-7b-instruct",
     "mistralai/mistral-small", # (v2409)
+    "Qwen/Qwen1.5-0.5B",
     
     "google/gemma-2-27b-it",
     
@@ -73,7 +75,7 @@ class Config:
         self.api_keys = self._load_api_keys()
         
         # Default values
-        self.default_provider = "openrouter"
+        self.default_provider = "vllm"
         
         # Mapping from model names to providers
         self.model_provider_mapping = {
@@ -117,8 +119,8 @@ class Config:
             pass
             
         # Ensure at least one valid API key is found
-        if not keys["openrouter"]:
-            raise ValueError("No valid OpenRouter API key found, please provide one in the apikey file or environment variable")
+        # if not keys["openrouter"]:
+        #     raise ValueError("No valid OpenRouter API key found, please provide one in the apikey file or environment variable")
             
         return keys
         
