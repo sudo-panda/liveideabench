@@ -14,6 +14,7 @@ from typing import Dict, List, Optional, Union, Tuple, Any
 
 from openai import OpenAI
 import google.generativeai as genai
+from vllm import LLM, SamplingParams
 import random
 
 from config import config
@@ -88,8 +89,7 @@ class BaseLLM:
             )
 
         elif self.provider == "vllm":
-            from vllm import LLM, SamplingParams
-            self.client = LLM(model=self.model_name)
+            self.client = LLM(model=self.model_name, disable_log_stats = True)
 
         else:
             # Default to OpenRouter
@@ -157,8 +157,8 @@ class BaseLLM:
         if system_prompt:
             prompt = f"{system_prompt}\n\n{prompt}"
 
-        response = self.client.generate([prompt], SamplingParams(**sampling_params))
-        return response.outputs[0].text
+        response = self.client.generate([prompt], SamplingParams(**sampling_params), use_tqdm=False)
+        return response[0].outputs[0].text
 
     def _openai_compatible_completion(self, prompt: str, system_prompt: Optional[str] = None) -> str:
         """Execute completion request for OpenAI-compatible API

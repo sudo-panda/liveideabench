@@ -15,17 +15,17 @@ CRITIC_MODELS = [
     "Qwen/Qwen2.5-72B-Instruct",
     "Qwen/Qwen2.5-32B-Instruct",
     "mistralai/Ministral-8B-Instruct-2410",
-    # "openai/o1",           # Excluded due to openai exceeding 2 models
-    # "anthropic/claude-3.7", # Excluded as it shares the same base model as 'thinking'
-    "meta-llama/Llama-3.3-70B-Instruct",
+    # "meta-llama/Llama-3.3-70B-Instruct",
     "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B"
     "deepseek-ai/DeepSeek-R1",
-    "meta-llama/Llama-4-Maverick-17B-128E-Instruct",
+    # "meta-llama/Llama-4-Maverick-17B-128E-Instruct",
     "microsoft/Phi-4-reasoning-plus",
     "microsoft/phi-4",
-    "deepseek-ai/DeepSeek-V3-0324"
-    # "google/gemini-2.0-flash-exp:free", # Excluded due to google exceeding 2 models
+    "deepseek-ai/DeepSeek-V3-0324",
     "mistralai/Mistral-Small-3.1-24B-Instruct-2503"
+
+    # "openai/o1",           # Excluded due to openai exceeding 2 models
+    # "anthropic/claude-3.7", # Excluded as it shares the same base model as 'thinking'
 ]
 
 IDEA_MODELS = [

@@ -116,7 +116,7 @@ def run_evaluation(keyword: str, idea_model: str, critic_models: List[str],
     idea_fallback_prompt = prompts['idea_prompt']['fallback_description'].replace('{{keywords}}', str(keyword))
     
     # Create idea LLM and generate idea
-    logger.info(f"Using model {idea_model} to generate idea for '{keyword}'")
+    logger.info(f"Using model {idea_model} to generate idea for '{keyword}' using prompt: \n{idea_prompt}")
     
 
     idea_llm = create_llm("idea", idea_model, provider)
