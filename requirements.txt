@@ -227,3 +227,4 @@ yarl
 zipp
 zlib-state
 zstandard
+huggingface_hub[cli]

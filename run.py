@@ -14,6 +14,9 @@ from datetime import datetime
 from typing import Dict, List, Any, Optional, Union
 import pandas as pd
 from openpyxl import load_workbook
+from huggingface_hub import whoami
+
+print("Hugging Face logged in as user:", whoami()["name"])
 
 # Custom modules
 from config import config
