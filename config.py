@@ -12,20 +12,18 @@ PROVIDER_NAMES = ["openrouter", "ollama", "stepfun", "gemini", "aigcbest", "vllm
 
 # Define the critic models (stronger models)
 CRITIC_MODELS = [
-    "Qwen/Qwen2.5-72B-Instruct",
-    "Qwen/Qwen2.5-32B-Instruct",
-    "mistralai/Ministral-8B-Instruct-2410",
-    # "meta-llama/Llama-3.3-70B-Instruct",
-    "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B"
-    "deepseek-ai/DeepSeek-R1",
-    # "meta-llama/Llama-4-Maverick-17B-128E-Instruct",
     "microsoft/Phi-4-reasoning-plus",
-    "microsoft/phi-4",
+    "microsoft/phi-2",
+    "Qwen/Qwen2.5-14B-Instruct",
+    "mistralai/Mistral-7B-Instruct-v0.3",
+    "mistralai/Mistral-8x7B-Instruct-v0.1",
+    "mistralai/Mistral-Small-3.1-24B-Instruct-2503",
+    "google/gemma-7b-it",
+    "Qwen/Qwen1.5-14B-Chat",
+    "tiiuae/falcon-40b-instruct",
+    "deepseek-ai/DeepSeek-R1",
+    "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B",
     "deepseek-ai/DeepSeek-V3-0324",
-    "mistralai/Mistral-Small-3.1-24B-Instruct-2503"
-
-    # "openai/o1",           # Excluded due to openai exceeding 2 models
-    # "anthropic/claude-3.7", # Excluded as it shares the same base model as 'thinking'
 ]
 
 IDEA_MODELS = [
