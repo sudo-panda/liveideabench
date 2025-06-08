@@ -313,6 +313,11 @@ class BaseLLM:
                 time.sleep(wait_time)
                 retry_count += 1
                 continue
+    
+    def cleanup(self) -> None:
+        del self.client
+
+        
 
 
 

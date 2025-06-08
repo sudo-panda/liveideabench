@@ -15,6 +15,7 @@ from typing import Dict, List, Any, Optional, Union
 import pandas as pd
 from openpyxl import load_workbook
 from huggingface_hub import whoami
+import gc, torch
 
 print("Hugging Face logged in as user:", whoami()["name"])
 
@@ -102,6 +103,12 @@ def clean_text(text: str) -> str:
     # Replace multiple spaces with a single space
     return ' '.join(text.split())
 
+def run_cleanup(llm) -> None:
+    llm.cleanup()
+    del llm
+    gc.collect()
+    torch.cuda.empty_cache()
+
 
 def run_evaluation(keyword: str, idea_model: str, critic_models: List[str], 
                   prompts: Dict[str, Dict[str, str]], provider: Optional[str] = None) -> None:
@@ -124,7 +131,8 @@ def run_evaluation(keyword: str, idea_model: str, critic_models: List[str],
 
     idea_llm = create_llm("idea", idea_model, provider)
     generation_result = idea_llm.generate_idea(idea_prompt, fallback_prompt=idea_fallback_prompt)
-    
+    run_cleanup(idea_llm)
+
     idea = generation_result["idea"]
     full_response = generation_result["full_response"]
     first_was_rejected = generation_result["first_was_rejected"]
@@ -179,6 +187,8 @@ def run_evaluation(keyword: str, idea_model: str, critic_models: List[str],
                 if isinstance(critique, tuple) and len(critique) == 2:
                     critique_reasoning = critique[1]
                     critique = critique[0]
+        
+        run_cleanup(critic_llm) 
         
         # If all attempts failed, record the error message
         if retry_count == max_retries and not (parsed_result.get('is_valid', False) and parsed_result.get('scores')):
