@@ -40,6 +40,56 @@ OPENROUTER_TO_AIGCBEST_MODEL_MAPPING = {
     "google/gemini-2.0-flash-lite-001":"gemini-2.0-flash-lite-preview-02-05",
 }
 
+VLLM_MODEL_CONFIGS = {
+    "DEFAULT": {
+        "tensor_parallel_size": 4,
+    },
+    "microsoft/Phi-4-reasoning-plus": {
+        "tensor_parallel_size": 2,
+        "max_model_len": 2048,
+        "gpu_memory_utilization": 0.85,
+        "swap_space": 16,
+    },
+    "deepseek-ai/DeepSeek-R1": {
+        "tensor_parallel_size": 4,
+        "max_model_len": 2048,
+        "gpu_memory_utilization": 0.88,
+    },
+    "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B": {
+        "tensor_parallel_size": 4,
+        "max_model_len": 2048,
+        "gpu_memory_utilization": 0.90,
+    },
+    "deepseek-ai/DeepSeek-V3-0324": {
+        "tensor_parallel_size": 4,
+        "max_model_len": 2048,
+        "gpu_memory_utilization": 0.88,
+    },
+    "Qwen/Qwen2.5-14B-Instruct": {
+        "gpu_memory_utilization": 0.92,
+        "max_model_len": 4096,
+    },
+    "mistralai/Mistral-8x7B-Instruct-v0.1": {
+        "max_model_len": 2048,
+        "gpu_memory_utilization": 0.90,
+    },
+    "mistralai/Mistral-Small-3.1-24B-Instruct-2503": {
+        "gpu_memory_utilization": 0.92,
+    },
+    "Qwen/Qwen1.5-14B-Chat": {
+        "gpu_memory_utilization": 0.90,
+        "max_model_len": 2048,
+    },
+    "tiiuae/falcon-40b-instruct": {
+        "tensor_parallel_size": 4,
+        "max_model_len": 2048,
+        "gpu_memory_utilization": 0.88,
+    },
+    "mistralai/Mistral-7B-Instruct-v0.3": {
+        "gpu_memory_utilization": 0.92,
+        "max_model_len": 2048,
+    },
+}
 
 class BaseLLM:
     """Base LLM class, handling communication with LLM APIs"""
@@ -89,8 +139,12 @@ class BaseLLM:
             )
 
         elif self.provider == "vllm":
-            self.client = LLM(model=self.model_name, disable_log_stats = True)
+            addn_args = VLLM_MODEL_CONFIGS.get("DEFAULT").copy()
+            addn_args.update(VLLM_MODEL_CONFIGS.get(self.model_name, {}))
 
+            logger.info(f"[DEBUG] Config: {addn_args}")
+            # Initialize the VLLM client
+            self.client = LLM(model=self.model_name, disable_log_stats=True, **addn_args)
         else:
             # Default to OpenRouter
             api_key = config.get_api_key("openrouter")
