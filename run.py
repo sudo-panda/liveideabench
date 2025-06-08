@@ -284,6 +284,7 @@ def main() -> None:
     """Main function, handle command-line arguments and run the evaluations"""
     parser = argparse.ArgumentParser(description="LiveIdeaBench - LLM Scientific Idea Evaluation Benchmark")
     parser.add_argument('--idea_model', type=str, help='Idea generation model name')
+    parser.add_argument('--critic_models', type=str, help='Critic model names, comma-separated; if not specified, 3 random critics will be selected')
     parser.add_argument('--start_from_last_run', action='store_true', help='Continue from the last run')
     parser.add_argument('--provider', type=str, choices=['openrouter', 'gemini', 'stepfun', 'ollama', 'vllm'],
                        help='Model provider, default is inferred from the model name')
@@ -341,7 +342,13 @@ def main() -> None:
         # Randomly select 3 critic models, excluding the idea model itself
         available_critics = [m for m in CRITIC_MODELS if m != args.idea_model]
         num_critics = 3
-        critic_models = random.sample(available_critics, min(num_critics, len(available_critics)))
+
+        if args.critic_models:
+            critic_models = [ model.strip() for model in args.critic_models.split(',') ]
+            assert all(model in available_critics for model in critic_models), f"Invalid critic models specified: {critic_models}. Available critics: {available_critics}"
+            assert len(critic_models) == num_critics, f"Must specify exactly {num_critics} critic models, got {len(critic_models)}"
+        else:
+            critic_models = random.sample(available_critics, min(num_critics, len(available_critics)))
         
         logger.info(f"Selected keyword: '{keyword}'")
         logger.info(f"Selected critics: {', '.join(critic_models)}")
