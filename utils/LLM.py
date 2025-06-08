@@ -15,6 +15,7 @@ from typing import Dict, List, Optional, Union, Tuple, Any
 from openai import OpenAI
 import google.generativeai as genai
 from vllm import LLM, SamplingParams
+logging.getLogger("vllm").setLevel(logging.WARNING)
 import random
 
 from config import config
