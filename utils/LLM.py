@@ -15,7 +15,7 @@ from typing import Dict, List, Optional, Union, Tuple, Any
 from openai import OpenAI
 import google.generativeai as genai
 from vllm import LLM, SamplingParams
-logging.getLogger("vllm").setLevel(logging.WARNING)
+from vllm_gh200 import VLLM_MODEL_CONFIGS
 import random
 
 from config import config
@@ -41,56 +41,7 @@ OPENROUTER_TO_AIGCBEST_MODEL_MAPPING = {
     "google/gemini-2.0-flash-lite-001":"gemini-2.0-flash-lite-preview-02-05",
 }
 
-VLLM_MODEL_CONFIGS = {
-    "DEFAULT": {
-        "tensor_parallel_size": 4,
-    },
-    "microsoft/Phi-4-reasoning-plus": {
-        "tensor_parallel_size": 2,
-        "max_model_len": 2048,
-        "gpu_memory_utilization": 0.85,
-        "swap_space": 16,
-    },
-    "deepseek-ai/DeepSeek-R1": {
-        "tensor_parallel_size": 4,
-        "max_model_len": 2048,
-        "gpu_memory_utilization": 0.88,
-    },
-    "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B": {
-        "tensor_parallel_size": 4,
-        "max_model_len": 2048,
-        "gpu_memory_utilization": 0.90,
-    },
-    "deepseek-ai/DeepSeek-V3-0324": {
-        "tensor_parallel_size": 4,
-        "max_model_len": 2048,
-        "gpu_memory_utilization": 0.88,
-    },
-    "Qwen/Qwen2.5-14B-Instruct": {
-        "gpu_memory_utilization": 0.92,
-        "max_model_len": 4096,
-    },
-    "mistralai/Mistral-8x7B-Instruct-v0.1": {
-        "max_model_len": 2048,
-        "gpu_memory_utilization": 0.90,
-    },
-    "mistralai/Mistral-Small-3.1-24B-Instruct-2503": {
-        "gpu_memory_utilization": 0.92,
-    },
-    "Qwen/Qwen1.5-14B-Chat": {
-        "gpu_memory_utilization": 0.90,
-        "max_model_len": 2048,
-    },
-    "tiiuae/falcon-40b-instruct": {
-        "tensor_parallel_size": 4,
-        "max_model_len": 2048,
-        "gpu_memory_utilization": 0.88,
-    },
-    "mistralai/Mistral-7B-Instruct-v0.3": {
-        "gpu_memory_utilization": 0.92,
-        "max_model_len": 2048,
-    },
-}
+
 
 class BaseLLM:
     """Base LLM class, handling communication with LLM APIs"""
