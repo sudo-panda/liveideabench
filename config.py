@@ -12,18 +12,28 @@ PROVIDER_NAMES = ["openrouter", "ollama", "stepfun", "gemini", "aigcbest", "vllm
 
 # Define the critic models (stronger models)
 CRITIC_MODELS = [
+    "deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
+    "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B",
+
+    "Qwen/Qwen3-32B",
+    "Qwen/Qwen3-30B-A3B",
+    "Qwen/Qwen2.5-72B-Instruct",
+
+    "meta-llama/Meta-Llama-3.3-70B-Instruct",
+    "meta-llama/Llama-4-Scout-Instruct",
+    "meta-llama/Llama-4-Maverick-Instruct",
+
+
     "microsoft/Phi-4-reasoning-plus",
     "microsoft/phi-2",
-    "Qwen/Qwen2.5-14B-Instruct",
+
     "mistralai/Mistral-7B-Instruct-v0.3",
-    "mistralai/Mistral-8x7B-Instruct-v0.1",
+    "mistralai/Mixtral-8x7B-Instruct-v0.1",
     "mistralai/Mistral-Small-3.1-24B-Instruct-2503",
+
     "google/gemma-7b-it",
-    "Qwen/Qwen1.5-14B-Chat",
+
     "tiiuae/falcon-40b-instruct",
-    "deepseek-ai/DeepSeek-R1",
-    "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B",
-    "deepseek-ai/DeepSeek-V3-0324",
 ]
 
 IDEA_MODELS = [
