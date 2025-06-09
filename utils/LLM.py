@@ -91,6 +91,11 @@ class BaseLLM:
             )
 
         elif self.provider == "vllm":
+            self.sampling_params = {
+                "temperature": 1.0,
+                "max_tokens": None,
+                "top_p": 1.0,
+            }
             addn_args = VLLM_MODEL_CONFIGS.get("DEFAULT").copy()
             addn_args.update(VLLM_MODEL_CONFIGS.get(self.model_name, {}))
 
@@ -154,16 +159,11 @@ class BaseLLM:
         Returns:
             VLLM model's response text
         """
-        sampling_params = {
-            "temperature": 1.0,
-            "max_tokens": None
-        }
-
-        # Build the prompt
         if system_prompt:
-            prompt = f"{system_prompt}\n\n{prompt}"
-
-        response = self.client.generate([prompt], SamplingParams(**sampling_params), use_tqdm=False)
+            full_prompt = [system_prompt, prompt]
+        else:
+            full_prompt = [prompt]
+        response = self.client.generate(full_prompt, SamplingParams(**self.sampling_params), use_tqdm=False)
         return response[0].outputs[0].text
 
     def _openai_compatible_completion(self, prompt: str, system_prompt: Optional[str] = None) -> str:
@@ -326,6 +326,21 @@ def is_response_rejected(text: str) -> bool:
 
 class IdeaLLM(BaseLLM):
     """Specialized LLM class for handling scientific idea generation"""
+    def __init__(self, model_name: str, provider: Optional[str] = None):
+        """Initialize IdeaLLM
+
+        Args:
+            model_name: Model name
+            provider: Optional provider name, if None, it will be automatically inferred from model_name
+        """
+        super().__init__(model_name, provider)
+        
+        if self.provider == "vllm":
+            self.sampling_params = {
+                "temperature": 0.5,
+                "max_tokens": 512,
+                "top_p": 0.95,
+            }
 
     def generate_idea(self, prompt: str, fallback_prompt: Optional[str] = None) -> Dict[str, str]:
         """Generate scientific idea
@@ -411,6 +426,21 @@ class IdeaLLM(BaseLLM):
 
 class CriticLLM(BaseLLM):
     """Specialized LLM class for handling scientific idea critique"""
+    def __init__(self, model_name: str, provider: Optional[str] = None):
+        """Initialize IdeaLLM
+
+        Args:
+            model_name: Model name
+            provider: Optional provider name, if None, it will be automatically inferred from model_name
+        """
+        super().__init__(model_name, provider)
+        
+        if self.provider == "vllm":
+            self.sampling_params = {
+                "temperature": 0.0,
+                "max_tokens": 512,
+                "top_p": 1.0,
+            }
 
     def critique_idea(self, idea: str, critic_prompt: Optional[str] = None, prompt: Optional[str] = None) -> str:
         """Critique scientific idea
