@@ -15,10 +15,10 @@ from typing import Dict, List, Optional, Union, Tuple, Any
 from openai import OpenAI
 import google.generativeai as genai
 from vllm import LLM, SamplingParams
-from vllm_gh200 import VLLM_MODEL_CONFIGS
+from .vllm_gh200 import VLLM_MODEL_CONFIGS
 import random
 
-from config import config
+from .config import config
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

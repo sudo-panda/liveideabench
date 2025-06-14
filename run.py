@@ -20,10 +20,10 @@ import gc, torch
 print("Hugging Face logged in as user:", whoami()["name"])
 
 # Custom modules
-from config import config
+from .utils.config import config
 from utils.LLM import create_llm, parse_critique, is_response_rejected
 from utils.database import save_result, check_duplicate_entries, close_all_connections
-from config import CRITIC_MODELS, IDEA_MODELS
+from .utils.config import CRITIC_MODELS, IDEA_MODELS
 
 # Ensure directories exist
 os.makedirs('./logs', exist_ok=True)

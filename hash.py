@@ -6,7 +6,7 @@ import os
 import json
 import argparse
 import requests
-from config import CRITIC_MODELS, IDEA_MODELS
+from .utils.config import CRITIC_MODELS, IDEA_MODELS
 from utils.LLM import create_llm
 from utils.utils import stable_hash, run_with_timeout
 from nltk.tokenize import word_tokenize

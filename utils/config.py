@@ -15,64 +15,31 @@ CRITIC_MODELS = [
     "deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
     "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B",
 
-    "Qwen/Qwen3-32B",
-    "Qwen/Qwen3-30B-A3B",
     "Qwen/Qwen2.5-72B-Instruct",
+    "Qwen/Qwen2.5-14B-Instruct",
 
-    "meta-llama/Meta-Llama-3.3-70B-Instruct",
-    "meta-llama/Llama-4-Scout-Instruct",
-    "meta-llama/Llama-4-Maverick-Instruct",
-
-
-    "microsoft/Phi-4-reasoning-plus",
-    "microsoft/phi-2",
+    "meta-llama/Llama-4-Scout-17B-16E-Instruct",
+    "meta-llama/Llama-3.3-70B-Instruct",
 
     "mistralai/Mistral-7B-Instruct-v0.3",
-    "mistralai/Mixtral-8x7B-Instruct-v0.1",
-    "mistralai/Mistral-Small-3.1-24B-Instruct-2503",
-
-    "google/gemma-7b-it",
-
-    "tiiuae/falcon-40b-instruct",
 ]
 
 IDEA_MODELS = [
-    "google/gemini-2.0-flash-exp:free",
-    "anthropic/claude-3.7-sonnet",
-    "openai/o1",
-    "openai/o3-mini",
-    "openai/o1-mini",
-    "step-2-16k-202411",
-    "openai/gpt-4o-2024-11-20",
-    "deepseek/deepseek-r1-distill-llama-70b",
-    "google/gemini-pro-1.5",
-    "x-ai/grok-2-1212",
-    
-    "google/gemini-2.0-flash-lite-001",
-    "sammcj/qwen2.5-dracarys2-72b:Q4_K_M",
-    "meta-llama/llama-3.1-405b-instruct",
-    "qwen/qwen-2.5-72b-instruct",
-    "openai/gpt-4-turbo",
-    "meta-llama/llama-3.3-70b-instruct",
-    "anthropic/claude-3-opus",
-    "mistralai/mistral-large-2411",
-    "qwen/qwen-2.5-coder-32b-instruct",
-    "deepseek/deepseek-r1-distill-qwen-32b",
-    
-    "meta-llama/llama-3.1-70b-instruct",
-    "amazon/nova-pro-v1",
-    "anthropic/claude-3.5-haiku-20241022",
-    "mistralai/mistral-small-24b-instruct-2501",
-    "microsoft/phi-4",
-    "openai/gpt-4o-mini",
-    "qwen/qwq-32b-preview",
-    "amazon/nova-lite-v1",
-    "qwen/qwen-2.5-7b-instruct",
-    "mistralai/mistral-small", # (v2409)
-    "Qwen/Qwen1.5-0.5B",
-    
-    "google/gemma-2-27b-it",
-    
+    "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B",
+    "deepseek-ai/DeepSeek-R1-Distill-Llama-8B",
+    "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B",
+
+    "Qwen/Qwen3-14B",
+    "Qwen/Qwen3-8B",
+    "Qwen/Qwen2.5-Math-72B-Instruct",
+    "Qwen/Qwen2-72B",
+    "Qwen/Qwen2.5-VL-72B-Instruct",
+
+    "meta-llama/Meta-Llama-3-70B-Instruct",
+
+    "microsoft/Phi-4-reasoning-plus",
+
+    "tiiuae/falcon-40b-instruct",
 ] + CRITIC_MODELS
 
 class Config:
