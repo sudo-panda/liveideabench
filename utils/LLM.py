@@ -99,6 +99,9 @@ class BaseLLM:
             addn_args = VLLM_MODEL_CONFIGS.get("DEFAULT").copy()
             addn_args.update(VLLM_MODEL_CONFIGS.get(self.model_name, {}))
 
+            if addn_args.get("NOT_SUPPORTED", False):
+                raise NotImplementedError(f"Model {self.model_name} is supported on clariden by vllm")
+
             logger.info(f"[DEBUG] Config: {addn_args}")
             # Initialize the VLLM client
             self.client = LLM(model=self.model_name, disable_log_stats=True, **addn_args)
