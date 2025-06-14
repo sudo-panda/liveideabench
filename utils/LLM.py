@@ -21,6 +21,17 @@ import random
 from .config import config
 import gc, torch
 
+import vllm.logger as vllm_logger
+
+# 1. Take the default config and modify the handler to stderr
+cfg = vllm_logger.DEFAULT_LOGGING_CONFIG.copy()
+cfg["handlers"] = cfg["handlers"].copy()
+cfg["handlers"]["vllm"] = cfg["handlers"]["vllm"].copy()
+cfg["handlers"]["vllm"]["stream"] = "ext://sys.stderr"
+
+# 2. Apply the config before loading any vLLM models
+logging.config.dictConfig(cfg)
+
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
