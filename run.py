@@ -5,7 +5,6 @@ LiveIdeaBench Main Program
 Used for running benchmark tests for scientific idea generation and evaluation
 """
 
-import os
 import random
 import json
 import logging
@@ -15,7 +14,6 @@ from typing import Dict, List, Any, Optional, Union
 import pandas as pd
 from openpyxl import load_workbook
 from huggingface_hub import whoami
-import gc, torch
 
 print("Hugging Face logged in as user:", whoami()["name"])
 
@@ -106,8 +104,6 @@ def clean_text(text: str) -> str:
 def run_cleanup(llm) -> None:
     llm.cleanup()
     del llm
-    gc.collect()
-    torch.cuda.empty_cache()
 
 
 def run_evaluation(keyword: str, idea_model: str, critic_models: List[str], 

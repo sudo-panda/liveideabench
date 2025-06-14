@@ -19,6 +19,7 @@ from .vllm_gh200 import VLLM_MODEL_CONFIGS
 import random
 
 from .config import config
+import gc, torch
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
