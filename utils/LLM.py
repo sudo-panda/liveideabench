@@ -116,7 +116,7 @@ class BaseLLM:
 
             logger.info(f"[DEBUG] Config: {addn_args}")
             # Initialize the VLLM client
-            self.client = LLM(model=self.model_name, disable_log_stats=True, **addn_args)
+            self.client = LLM(model=self.model_name, disable_log_stats=True, use_tqdm_on_load=False, **addn_args)
         else:
             # Default to OpenRouter
             api_key = config.get_api_key("openrouter")
