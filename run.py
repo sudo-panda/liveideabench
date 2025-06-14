@@ -128,7 +128,7 @@ def run_evaluation(keyword: str, idea_model: str, critic_models: List[str],
     idea_llm = create_llm("idea", idea_model, provider)
     generation_result = idea_llm.generate_idea(idea_prompt, fallback_prompt=idea_fallback_prompt)
     run_cleanup(idea_llm)
-
+    
     idea = generation_result["idea"]
     full_response = generation_result["full_response"]
     first_was_rejected = generation_result["first_was_rejected"]
@@ -143,6 +143,7 @@ def run_evaluation(keyword: str, idea_model: str, critic_models: List[str],
     
     logger.info(f"Idea generation complete, length: {len(idea)} characters")
     
+    error_msgs = []
     # Evaluate the idea with each critic model
     for critic_model in critic_models:
         logger.info(f"Using critic {critic_model} to evaluate the idea")
@@ -163,6 +164,8 @@ def run_evaluation(keyword: str, idea_model: str, critic_models: List[str],
         retry_count = 0
         parsed_result = None
         error_msg = None
+
+        initial_critique = critique  # [REMOVE] Save the initial critique for logging
         
         while retry_count < max_retries:
             parsed_result = parse_critique(critique)
@@ -188,8 +191,18 @@ def run_evaluation(keyword: str, idea_model: str, critic_models: List[str],
         
         # If all attempts failed, record the error message
         if retry_count == max_retries and not (parsed_result.get('is_valid', False) and parsed_result.get('scores')):
-            error_msg = f"Critique parsing failed: Unable to get valid scores after 3 attempts"
-            logger.error(error_msg)
+            error_msg = (f"Critique parsing failed: Unable to get valid scores after 3 attempts: \n\n"
+                         f"\tPROMPT PROMPT PROMPT PROMPT PROMPT PROMPT PROMPT PROMPT PROMPT PROMPT PROMPT PROMPT PROMPT PROMPT PROMPT PROMPT PROMPT PROMPT\n"
+                         f"{critic_prompt} \n"
+                         f"\tPROMPT PROMPT PROMPT PROMPT PROMPT PROMPT PROMPT PROMPT PROMPT PROMPT PROMPT PROMPT PROMPT PROMPT PROMPT PROMPT PROMPT PROMPT\n\n"
+                         f"\tIDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA\n"
+                         f"{idea} \n"
+                         f"\tIDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA IDEA\n\n"
+                         f"\tCRITIC CRITIC CRITIC CRITIC CRITIC CRITIC CRITIC CRITIC CRITIC CRITIC CRITIC CRITIC CRITIC CRITIC CRITIC CRITIC CRITIC CRITIC\n"
+                         f"{initial_critique} \n"
+                         f"\tCRITIC CRITIC CRITIC CRITIC CRITIC CRITIC CRITIC CRITIC CRITIC CRITIC CRITIC CRITIC CRITIC CRITIC CRITIC CRITIC CRITIC CRITIC\n\n"
+                         )
+            logging.error(f"{error_msg}")
         
         # Save the result
         result_data = {
@@ -213,9 +226,13 @@ def run_evaluation(keyword: str, idea_model: str, critic_models: List[str],
         save_result(result_data)
         
         if error_msg:
-            raise ValueError(error_msg)
+            error_msgs.append(f"ERROR with {critic_model}: {error_msg}")
         else:
-            logger.info(f"Evaluation result saved")
+            logger.info(f"Evaluation with {critic_model} completed successfully, scores: {parsed_result.get('scores')}")
+            
+    if len(error_msgs) > 0:
+        ValueError(f"Evaluation completed with errors: \n\n"
+                   f"{'\n\t----------------------------------------------------------------------------\n'.join(error_msgs)}")
             
 
 

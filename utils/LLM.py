@@ -272,6 +272,8 @@ class BaseLLM:
     
     def cleanup(self) -> None:
         del self.client
+        gc.collect()
+        torch.cuda.empty_cache()
 
         
 
