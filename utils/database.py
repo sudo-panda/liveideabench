@@ -52,6 +52,8 @@ def close_all_connections() -> None:
 
 def init_database() -> None:
     """Initialize the database structure"""
+    logger.info("Initializing database...")
+
     conn = get_connection()
     cursor = conn.cursor()
     
@@ -60,23 +62,25 @@ def init_database() -> None:
     CREATE TABLE IF NOT EXISTS results (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         timestamp TEXT NOT NULL,
-        keywords TEXT NOT NULL,
+        prompt_input TEXT NOT NULL,
         idea_model TEXT NOT NULL,
         critic_model TEXT NOT NULL,
         idea TEXT NOT NULL,
         raw_critique TEXT NOT NULL,
-        parsed_scores TEXT,          -- Scores stored in JSON format
-        parsed_reasoning TEXT,       -- Analysis stored in JSON format
-        critique_reasoning TEXT,     -- Reasoning process of the critic model
-        error TEXT,                  -- Potential error messages
-        full_response TEXT NOT NULL, -- Full response
+        parsed_scores TEXT,                   -- Scores stored in JSON format
+        parsed_reasoning TEXT,                -- Analysis stored in JSON format
+        critique_reasoning TEXT,              -- Reasoning process of the critic model
+        error TEXT,                           -- Potential error messages
+        full_response TEXT NOT NULL,          -- Full response
         first_was_rejected INTEGER DEFAULT 0, -- Flag indicating if the model rejected the request initially
-        first_reject_response TEXT   -- Stores the reason for the initial rejection
+        first_reject_response TEXT,           -- Stores the reason for the initial rejection
+        hallucination_scores TEXT,            -- Stores hallucination scores in JSON format
+        samples_for_hallucination TEXT        -- Stores samples for hallucination detection in JSON format
     )
     ''')
     
     # Create indexes to speed up queries
-    cursor.execute('CREATE INDEX IF NOT EXISTS idx_keyword_model ON results (keywords, idea_model)')
+    cursor.execute('CREATE INDEX IF NOT EXISTS idx_prompt_input_model ON results (prompt_input, idea_model)')
     cursor.execute('CREATE INDEX IF NOT EXISTS idx_timestamp ON results (timestamp)')
     
     conn.commit()
@@ -96,7 +100,7 @@ def save_result(result_data: Dict[str, Any]) -> int:
     
     # Extract and process data
     timestamp = datetime.now().isoformat()
-    keywords = result_data.get('keywords', '')
+    prompt_input = result_data.get('prompt_input', '')
     idea_model = result_data.get('idea_model', '')
     critic_model = result_data.get('critic_model', '')
     idea = result_data.get('idea', '')
@@ -107,10 +111,16 @@ def save_result(result_data: Dict[str, Any]) -> int:
     # Handle parsing results
     parsed_scores = None
     parsed_reasoning = None
+    hallucination_scores = None
+    samples_for_hallucination = None
     if 'parsed_score' in result_data and result_data['parsed_score']:
         parsed_scores = json.dumps(result_data['parsed_score'])
     if 'parsed_feedback' in result_data and result_data['parsed_feedback']:
         parsed_reasoning = json.dumps(result_data['parsed_feedback'])
+    if 'hallucination_scores' in result_data and result_data['hallucination_scores']:
+        hallucination_scores = json.dumps(result_data['hallucination_scores'])
+    if 'samples_for_hallucination' in result_data and result_data['samples_for_hallucination']:
+        samples_for_hallucination = json.dumps(result_data['samples_for_hallucination'])
     
     # Get the model's reasoning process
     critique_reasoning = result_data.get('critique_reasoning')
@@ -124,12 +134,14 @@ def save_result(result_data: Dict[str, Any]) -> int:
     try:
         cursor.execute('''
         INSERT INTO results 
-        (timestamp, keywords, idea_model, critic_model, idea, raw_critique, 
-         parsed_scores, parsed_reasoning, critique_reasoning, error, full_response, first_was_rejected, first_reject_response)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (timestamp, prompt_input, idea_model, critic_model, idea, raw_critique, 
+         parsed_scores, parsed_reasoning, critique_reasoning, error, full_response, 
+         first_was_rejected, first_reject_response, hallucination_scores, samples_for_hallucination)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
-            timestamp, keywords, idea_model, critic_model, idea, raw_critique,
-            parsed_scores, parsed_reasoning, critique_reasoning, error, full_response, first_was_rejected, first_reject_response
+            timestamp, prompt_input, idea_model, critic_model, idea, raw_critique,
+            parsed_scores, parsed_reasoning, critique_reasoning, error, full_response, 
+            first_was_rejected, first_reject_response, hallucination_scores, samples_for_hallucination
         ))
         
         conn.commit()
@@ -156,7 +168,7 @@ def check_duplicate_entries(keyword: str, idea_model: str, limit: int = 6) -> bo
     
     cursor.execute('''
     SELECT COUNT(*) as count FROM results 
-    WHERE keywords = ? AND idea_model = ?
+    WHERE prompt_input = ? AND idea_model = ?
     ''', (keyword, idea_model))
     
     result = cursor.fetchone()
@@ -185,7 +197,7 @@ def query_results(filters: Optional[Dict[str, Any]] = None,
     if filters:
         conditions = []
         for key, value in filters.items():
-            if key in ['keywords', 'idea_model', 'critic_model', 'first_was_rejected']:
+            if key in ['prompt_input', 'idea_model', 'critic_model', 'first_was_rejected']:
                 conditions.append(f"{key} = ?")
                 params.append(value)
         
@@ -215,6 +227,18 @@ def query_results(filters: Optional[Dict[str, Any]] = None,
                 result_dict['parsed_reasoning'] = json.loads(result_dict['parsed_reasoning'])
             except json.JSONDecodeError:
                 pass
+
+        if result_dict.get('hallucination_scores'):
+            try:
+                result_dict['hallucination_scores'] = json.loads(result_dict['hallucination_scores'])
+            except json.JSONDecodeError:
+                pass
+
+        if result_dict.get('samples_for_hallucination'):
+            try:
+                result_dict['samples_for_hallucination'] = json.loads(result_dict['samples_for_hallucination'])
+            except json.JSONDecodeError:
+                pass
                 
         results.append(result_dict)
     
@@ -235,7 +259,7 @@ def export_to_csv(output_path: str) -> None:
     df = pd.read_sql_query("SELECT * FROM results", conn)
     
     # Process JSON fields
-    for json_col in ['parsed_scores', 'parsed_reasoning']:
+    for json_col in ['parsed_scores', 'parsed_reasoning', 'hallucination_scores', 'samples_for_hallucination']:
         if json_col in df.columns:
             df[json_col] = df[json_col].apply(
                 lambda x: json.loads(x) if x and isinstance(x, str) else x

@@ -123,6 +123,7 @@ def query_local_model(prompt, model="olmo2:7b"):
     except Exception as e:
         print(f"Error connecting to Ollama: {e}")
         return None
+    
 def main(max_num_eval=None, method="llm"):
     
     # Set a fixed random seed to ensure reproducibility
@@ -139,8 +140,8 @@ def main(max_num_eval=None, method="llm"):
     df['idea_length_in_words'] = df['idea'].apply(lambda x: len(str(x).split()))
     df = df[df['idea_length_in_words'] < 200]
 
-    # Extract unique keywords and idea models
-    all_keywords = df['keywords'].unique().tolist()
+    # Extract unique prompt_inputs and idea models
+    all_prompt_inputs = df['prompt_inputs'].unique().tolist()
     all_idea_models = df['idea_model'].unique().tolist()
 
     # Create or load the JSON file
@@ -168,7 +169,7 @@ def main(max_num_eval=None, method="llm"):
         return
     
     # Create all possible keyword and model combinations
-    keyword_model_pairs = [(keyword, idea_model) for keyword in all_keywords for idea_model in all_idea_models]
+    keyword_model_pairs = [(keyword, idea_model) for keyword in all_prompt_inputs for idea_model in all_idea_models]
     
     # Hashes of ideas already evaluated
     existing_hashes = set()
@@ -194,7 +195,7 @@ def main(max_num_eval=None, method="llm"):
             break
             
         # Filter the data for the specific keyword and model
-        df_view = df[(df['keywords'] == keyword) & (df['idea_model'] == idea_model)]
+        df_view = df[(df['prompt_inputs'] == keyword) & (df['idea_model'] == idea_model)]
         
         if len(df_view) < 2:
             continue
