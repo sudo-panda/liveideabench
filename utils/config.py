@@ -63,6 +63,8 @@ class Config:
             # Other mappings can be dynamically added at runtime
         }
 
+        self.samples_for_hallucination = 1  # Number of samples to generate for hallucination detection
+
     def _load_api_keys(self) -> Dict[str, str]:
         """Load API keys from apikey file and environment variables"""
         # Initialize default values
@@ -124,6 +126,12 @@ class Config:
         if provider not in PROVIDER_NAMES:
             raise ValueError(f"Unsupported provider: {provider}. Supported providers are: {', '.join(PROVIDER_NAMES)}")
         self.default_provider = provider
+
+    def set_samples_for_hallucination(self, num_samples: int) -> None:
+        """Set the number of samples to generate for hallucination detection"""
+        if num_samples <= 0:
+            raise ValueError("Number of samples must be a positive integer")
+        self.samples_for_hallucination = num_samples
 
 
 # Create a global config instance
