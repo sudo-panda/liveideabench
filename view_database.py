@@ -24,7 +24,9 @@ def load_and_display_database():
         df = pd.read_sql_query(query, conn)
 
         # Process JSON fields
-        for json_col in ['parsed_scores', 'parsed_reasoning']:
+        for json_col in ['critic_models', 'raw_critiques', 'parsed_scores', 
+                     'parsed_reasonings', 'critique_reasonings', 'error', 
+                     'hallucination_scores', 'samples_for_hallucination']:
             if json_col in df.columns:
                 df[json_col] = df[json_col].apply(
                     lambda x: json.loads(x) if pd.notna(x) and isinstance(x, str) else x
@@ -33,16 +35,19 @@ def load_and_display_database():
         # Print basic statistics
         print(f"Total records in the database: {len(df)}")
         print("\nBasic Statistics:")
-        print(f"Unique keywords: {df['keywords'].nunique()}")
+        print(f"Unique prompt inputs: {df['prompt_input'].nunique()}")
         print(f"Number of idea model types: {df['idea_model'].nunique()}")
-        print(f"Number of critic model types: {df['critic_model'].nunique()}")
+        
+        if 'critic_models' in df.columns:
+            unique_critics = set(e for lst in df['critic_models'].dropna() for e in (lst if isinstance(lst, list) else [lst]))
+            print(f"Unique critic models: {unique_critics}")
 
         # Display an overview of the DataFrame
         print("\nData Preview:")
         # Select more meaningful columns for display
         display_columns = [
-            'id', 'timestamp', 'keywords', 'idea_model', 'critic_model',
-            'parsed_scores', 'first_was_rejected'
+            'id', 'timestamp', 'prompt_input', 'idea_model', 'critic_models',
+            'parsed_scores', 'first_was_rejected', 'hallucination_scores'
         ]
         preview_df = df[display_columns].head(10)
         
@@ -61,6 +66,7 @@ def load_and_display_database():
 if __name__ == "__main__":
     print("Loading IdeaBench database...")
     df = load_and_display_database()
+    os.makedirs('./csvs', exist_ok=True)
     df.to_csv('./csvs/view.csv')
 
     if df is not None:

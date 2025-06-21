@@ -64,12 +64,12 @@ def init_database() -> None:
         timestamp TEXT NOT NULL,
         prompt_input TEXT NOT NULL,
         idea_model TEXT NOT NULL,
-        critic_model TEXT NOT NULL,
+        critic_models TEXT NOT NULL,
         idea TEXT NOT NULL,
-        raw_critique TEXT NOT NULL,
+        raw_critiques TEXT NOT NULL,
         parsed_scores TEXT,                   -- Scores stored in JSON format
-        parsed_reasoning TEXT,                -- Analysis stored in JSON format
-        critique_reasoning TEXT,              -- Reasoning process of the critic model
+        parsed_reasonings TEXT,               -- Analysis stored in JSON format
+        critique_reasonings TEXT,             -- Reasoning process of the critic model
         error TEXT,                           -- Potential error messages
         full_response TEXT NOT NULL,          -- Full response
         first_was_rejected INTEGER DEFAULT 0, -- Flag indicating if the model rejected the request initially
@@ -102,28 +102,34 @@ def save_result(result_data: Dict[str, Any]) -> int:
     timestamp = datetime.now().isoformat()
     prompt_input = result_data.get('prompt_input', '')
     idea_model = result_data.get('idea_model', '')
-    critic_model = result_data.get('critic_model', '')
     idea = result_data.get('idea', '')
-    raw_critique = result_data.get('raw_critique', '')
     full_response = result_data.get('full_response', '')
-    error = result_data.get('error')
     
     # Handle parsing results
+    critic_models = None
+    raw_critiques = None
     parsed_scores = None
-    parsed_reasoning = None
+    parsed_reasonings = None
+    critique_reasonings = None
+    error = None
     hallucination_scores = None
     samples_for_hallucination = None
-    if 'parsed_score' in result_data and result_data['parsed_score']:
-        parsed_scores = json.dumps(result_data['parsed_score'])
+    if 'critic_models' in result_data and result_data['critic_models']:
+        critic_models = json.dumps(result_data['critic_models'])
+    if 'raw_critiques' in result_data and result_data['raw_critiques']:
+        raw_critiques = json.dumps(result_data['raw_critiques'])
+    if 'parsed_scores' in result_data and result_data['parsed_scores']:
+        parsed_scores = json.dumps(result_data['parsed_scores'])
     if 'parsed_feedback' in result_data and result_data['parsed_feedback']:
-        parsed_reasoning = json.dumps(result_data['parsed_feedback'])
+        parsed_reasonings = json.dumps(result_data['parsed_feedback'])
+    if 'critique_reasonings' in result_data and result_data['critique_reasonings']:
+        critique_reasonings = json.dumps(result_data['critique_reasonings'])
+    if 'error' in result_data and result_data['error']:
+        error = json.dumps(result_data['error'])
     if 'hallucination_scores' in result_data and result_data['hallucination_scores']:
         hallucination_scores = json.dumps(result_data['hallucination_scores'])
     if 'samples_for_hallucination' in result_data and result_data['samples_for_hallucination']:
         samples_for_hallucination = json.dumps(result_data['samples_for_hallucination'])
-    
-    # Get the model's reasoning process
-    critique_reasoning = result_data.get('critique_reasoning')
     
     # Get rejection status
     first_was_rejected = result_data.get('first_was_rejected', 0)
@@ -134,13 +140,13 @@ def save_result(result_data: Dict[str, Any]) -> int:
     try:
         cursor.execute('''
         INSERT INTO results 
-        (timestamp, prompt_input, idea_model, critic_model, idea, raw_critique, 
-         parsed_scores, parsed_reasoning, critique_reasoning, error, full_response, 
+        (timestamp, prompt_input, idea_model, critic_models, idea, raw_critiques, 
+         parsed_scores, parsed_reasonings, critique_reasonings, error, full_response, 
          first_was_rejected, first_reject_response, hallucination_scores, samples_for_hallucination)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
-            timestamp, prompt_input, idea_model, critic_model, idea, raw_critique,
-            parsed_scores, parsed_reasoning, critique_reasoning, error, full_response, 
+            timestamp, prompt_input, idea_model, critic_models, idea, raw_critiques,
+            parsed_scores, parsed_reasonings, critique_reasonings, error, full_response, 
             first_was_rejected, first_reject_response, hallucination_scores, samples_for_hallucination
         ))
         
@@ -197,7 +203,7 @@ def query_results(filters: Optional[Dict[str, Any]] = None,
     if filters:
         conditions = []
         for key, value in filters.items():
-            if key in ['prompt_input', 'idea_model', 'critic_model', 'first_was_rejected']:
+            if key in ['prompt_input', 'idea_model', 'critic_models', 'first_was_rejected']:
                 conditions.append(f"{key} = ?")
                 params.append(value)
         
@@ -214,6 +220,18 @@ def query_results(filters: Optional[Dict[str, Any]] = None,
     results = []
     for row in cursor.fetchall():
         result_dict = dict(row)
+
+        if result_dict.get('critic_models'):
+            try:
+                result_dict['critic_models'] = json.loads(result_dict['critic_models'])
+            except json.JSONDecodeError:
+                pass
+
+        if result_dict.get('raw_critiques'):
+            try:
+                result_dict['raw_critiques'] = json.loads(result_dict['raw_critiques'])
+            except json.JSONDecodeError:
+                pass
         
         # Parse JSON fields
         if result_dict.get('parsed_scores'):
@@ -222,9 +240,21 @@ def query_results(filters: Optional[Dict[str, Any]] = None,
             except json.JSONDecodeError:
                 pass
                 
-        if result_dict.get('parsed_reasoning'):
+        if result_dict.get('parsed_reasonings'):
             try:
-                result_dict['parsed_reasoning'] = json.loads(result_dict['parsed_reasoning'])
+                result_dict['parsed_reasonings'] = json.loads(result_dict['parsed_reasoning'])
+            except json.JSONDecodeError:
+                pass
+
+        if result_dict.get('critique_reasonings'):
+            try:
+                result_dict['critique_reasonings'] = json.loads(result_dict['critique_reasonings'])
+            except json.JSONDecodeError:
+                pass
+
+        if result_dict.get('error'):
+            try:
+                result_dict['error'] = json.loads(result_dict['error'])
             except json.JSONDecodeError:
                 pass
 
@@ -259,7 +289,9 @@ def export_to_csv(output_path: str) -> None:
     df = pd.read_sql_query("SELECT * FROM results", conn)
     
     # Process JSON fields
-    for json_col in ['parsed_scores', 'parsed_reasoning', 'hallucination_scores', 'samples_for_hallucination']:
+    for json_col in ['critic_models', 'raw_critiques', 'parsed_scores', 
+                     'parsed_reasonings', 'critique_reasonings', 'error', 
+                     'hallucination_scores', 'samples_for_hallucination']:
         if json_col in df.columns:
             df[json_col] = df[json_col].apply(
                 lambda x: json.loads(x) if x and isinstance(x, str) else x
