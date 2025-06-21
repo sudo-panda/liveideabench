@@ -18,8 +18,8 @@ CRITIC_MODELS = [
     "Qwen/Qwen2.5-72B-Instruct",
     "Qwen/Qwen2.5-14B-Instruct",
 
-    "meta-llama/Llama-4-Scout-17B-16E-Instruct",
     "meta-llama/Llama-3.3-70B-Instruct",
+    "meta-llama/Meta-Llama-3-70B-Instruct",
 
     "mistralai/Mistral-7B-Instruct-v0.3",
 ]
@@ -35,7 +35,7 @@ IDEA_MODELS = [
     "Qwen/Qwen2-72B",
     "Qwen/Qwen2.5-VL-72B-Instruct",
 
-    "meta-llama/Meta-Llama-3-70B-Instruct",
+    "meta-llama/Llama-4-Scout-17B-16E-Instruct",
 
     "microsoft/Phi-4-reasoning-plus",
 
