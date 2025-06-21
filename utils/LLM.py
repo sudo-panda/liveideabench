@@ -355,7 +355,7 @@ class IdeaLLM(BaseLLM):
         if self.provider == "vllm":
             self.sampling_params = {
                 "temperature": 0.5,
-                "max_tokens": 512,
+                "max_tokens": None,
                 "top_p": 0.95,
             }
 
@@ -455,8 +455,10 @@ class CriticLLM(BaseLLM):
         if self.provider == "vllm":
             self.sampling_params = {
                 "temperature": 0.0,
-                "max_tokens": 512,
+                "max_tokens": None,
                 "top_p": 1.0,
+                "stop": ["\n```\n"],
+                "include_stop_str_in_output": True,
             }
 
     def critique_idea(self, idea: str, critic_prompt: Optional[str] = None, prompt: Optional[str] = None) -> str:
