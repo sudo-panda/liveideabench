@@ -5,6 +5,19 @@ Responsible for communication with various LLM APIs, handling requests and respo
 """
 
 import os
+
+# Force NCCL to use TCP and avoid InfiniBand or Libfabric
+os.environ["NCCL_DEBUG"] = "WARN"
+os.environ["NCCL_NET"] = "Socket"           # use socket-based networking
+os.environ["FI_PROVIDER"] = "tcp"           # disable Libfabric (Fabric Interface)
+os.environ["NCCL_SOCKET_IFNAME"] = "lo"     # or eth0, depending on your network interface
+os.environ["TOKENIZERS_PARALLELISM"] = "true"
+os.environ["OMP_NUM_THREADS"] = "4"
+os.environ["MKL_NUM_THREADS"] = "4"
+os.environ["HF_HUB_REQUEST_TIMEOUT"] = "120"
+os.environ["HF_HUB_ENABLE_EMERGENCY_RETRY"] = "true"
+os.environ["HF_HUB_EMERGENCY_RETRY_WAIT_TIME"] = "20"
+
 import json
 import re
 import logging
