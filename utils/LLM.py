@@ -16,10 +16,15 @@ from typing import Dict, List, Optional, Union, Tuple, Any
 from openai import OpenAI
 import google.generativeai as genai
 from vllm import LLM, SamplingParams
-if os.environ.get("MACHINE_NAME") == "clariden":
+
+MACHINE_NAME = os.environ.get("MACHINE_NAME", "default")
+
+if MACHINE_NAME == "clariden":
     from .vllm_gh200 import CLARIDEN_VLLM_MODEL_CONFIGS as VLLM_MODEL_CONFIGS
-elif os.environ.get("MACHINE_NAME") == "helios":
+elif MACHINE_NAME == "helios":
     from .vllm_gh200 import HELIOS_VLLM_MODEL_CONFIGS as VLLM_MODEL_CONFIGS
+
+from .vllm_openai_wrapper import VLLMOpenAIWrapper
 import random
 
 from .config import config
@@ -124,6 +129,24 @@ class BaseLLM:
             except Exception as e:
                 logger.error(f"Model: {self.model_name} Config: {addn_args}")
                 raise e
+        elif self.provider == "vllm_openai":
+            self.sampling_params = {
+                "temperature": 1.0,
+                "max_tokens": None,
+                "top_p": 1.0,
+            }
+
+            if addn_args.get("NOT_SUPPORTED", False):
+                raise NotImplementedError(f"Model {self.model_name} is supported on {MACHINE_NAME} by vllm")
+            
+            addn_args = VLLM_MODEL_CONFIGS.get("DEFAULT").copy()
+            addn_args.update(VLLM_MODEL_CONFIGS.get(self.model_name, {}))
+
+            try:
+                self.client = VLLMOpenAIWrapper(model_name=self.model_name, port=8000)
+            except Exception as e:
+                logger.error(f"Model: {self.model_name} Config: {addn_args}")
+                raise e
         else:
             # Default to OpenRouter
             api_key = config.get_api_key("openrouter")
@@ -148,6 +171,8 @@ class BaseLLM:
             return self._gemini_completion(prompt, system_prompt)
         elif self.provider == "vllm":
             return self._vllm_completion(prompt, system_prompt)
+        elif self.provider == "vllm_openai":
+            return self._vllm_openai_completion(prompt, system_prompt)
         else:
             return self._openai_compatible_completion(prompt, system_prompt)
 
@@ -187,6 +212,19 @@ class BaseLLM:
             full_prompt = [prompt]
         response = self.client.generate(full_prompt, SamplingParams(**self.sampling_params), use_tqdm=False)
         return response[0].outputs[0].text
+    
+    def _vllm_openai_completion(self, prompt: str, system_prompt: Optional[str] = None) -> str:
+        """Execute VLLM OpenAI-compatible API completion request
+
+        Args:
+            prompt: User prompt
+            system_prompt: Optional system prompt
+
+        Returns:
+            VLLM OpenAI-compatible model's response text
+        """
+        response = self.client.generate(prompt=prompt, system_prompt=system_prompt, sampling_params=self.sampling_params)
+        return response["choices"][0]["message"]["content"]
 
     def _openai_compatible_completion(self, prompt: str, system_prompt: Optional[str] = None) -> str:
         """Execute completion request for OpenAI-compatible API

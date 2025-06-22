@@ -1,9 +1,14 @@
 import sys
+
 import os
-if os.environ.get("MACHINE_NAME") == "clariden":
+MACHINE_NAME = os.environ.get("MACHINE_NAME")
+
+if MACHINE_NAME == "clariden":
     from utils.vllm_gh200 import CLARIDEN_VLLM_MODEL_CONFIGS as VLLM_MODEL_CONFIGS
-elif os.environ.get("MACHINE_NAME") == "helios":
+elif MACHINE_NAME == "helios":
     from utils.vllm_gh200 import HELIOS_VLLM_MODEL_CONFIGS as VLLM_MODEL_CONFIGS
+
+
 from utils.LLM import BaseLLM
 import traceback
 import time
@@ -11,15 +16,14 @@ from concurrent import futures
 
 class VLLMCheck(BaseLLM):
     def __init__(self, model_name: str, **kwargs):
-        super().__init__(model_name, "vllm", **kwargs)
-        if self.provider == "vllm":
+        super().__init__(model_name, "vllm_openai", **kwargs)
+        if self.provider == "vllm" or self.provider == "vllm_openai":
             self.sampling_params = {
                 "temperature": 0.7,
                 "max_tokens": 100,
             }
 
     def check_model(self, prompt):
-        """Check if the model is available and can be loaded."""
         return self.completion(prompt)
 
 ADDITIONAL_MODELS = []
@@ -62,7 +66,7 @@ def main():
             print(f"[!] Failed to run model '{model_name}': {e}")
             traceback.print_exc()
         finally:
-            with open("logs/vllm_runtimes.txt", "a") as f:
+            with open(f"vllm_{MACHINE_NAME}_runtimes.txt", "a") as f:
                 if success:
                     f.write(f"{i:>3d} | {model_name:<50}: {runtime:.3f} seconds\n")
                 else:
