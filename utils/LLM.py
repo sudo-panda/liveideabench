@@ -6,18 +6,6 @@ Responsible for communication with various LLM APIs, handling requests and respo
 
 import os
 
-# Force NCCL to use TCP and avoid InfiniBand or Libfabric
-os.environ["NCCL_DEBUG"] = "WARN"
-os.environ["NCCL_NET"] = "Socket"           # use socket-based networking
-os.environ["FI_PROVIDER"] = "tcp"           # disable Libfabric (Fabric Interface)
-os.environ["NCCL_SOCKET_IFNAME"] = "lo"     # or eth0, depending on your network interface
-os.environ["TOKENIZERS_PARALLELISM"] = "true"
-os.environ["OMP_NUM_THREADS"] = "4"
-os.environ["MKL_NUM_THREADS"] = "4"
-os.environ["HF_HUB_REQUEST_TIMEOUT"] = "120"
-os.environ["HF_HUB_ENABLE_EMERGENCY_RETRY"] = "true"
-os.environ["HF_HUB_EMERGENCY_RETRY_WAIT_TIME"] = "20"
-
 import json
 import re
 import logging
@@ -28,7 +16,10 @@ from typing import Dict, List, Optional, Union, Tuple, Any
 from openai import OpenAI
 import google.generativeai as genai
 from vllm import LLM, SamplingParams
-from .vllm_gh200 import VLLM_MODEL_CONFIGS
+if os.environ.get("MACHINE_NAME") == "clariden":
+    from .vllm_gh200 import CLARIDEN_VLLM_MODEL_CONFIGS as VLLM_MODEL_CONFIGS
+elif os.environ.get("MACHINE_NAME") == "helios":
+    from .vllm_gh200 import HELIOS_VLLM_MODEL_CONFIGS as VLLM_MODEL_CONFIGS
 import random
 
 from .config import config
@@ -127,9 +118,12 @@ class BaseLLM:
             if addn_args.get("NOT_SUPPORTED", False):
                 raise NotImplementedError(f"Model {self.model_name} is supported on clariden by vllm")
 
-            logger.info(f"[DEBUG] Config: {addn_args}")
-            # Initialize the VLLM client
-            self.client = LLM(model=self.model_name, disable_log_stats=True, use_tqdm_on_load=False, **addn_args)
+            try:
+                # Initialize the VLLM client
+                self.client = LLM(model=self.model_name, disable_log_stats=True, **addn_args)
+            except Exception as e:
+                logger.error(f"Model: {self.model_name} Config: {addn_args}")
+                raise e
         else:
             # Default to OpenRouter
             api_key = config.get_api_key("openrouter")

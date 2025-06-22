@@ -1,5 +1,9 @@
 import sys
-from utils.vllm_gh200 import VLLM_MODEL_CONFIGS
+import os
+if os.environ.get("MACHINE_NAME") == "clariden":
+    from utils.vllm_gh200 import CLARIDEN_VLLM_MODEL_CONFIGS as VLLM_MODEL_CONFIGS
+elif os.environ.get("MACHINE_NAME") == "helios":
+    from utils.vllm_gh200 import HELIOS_VLLM_MODEL_CONFIGS as VLLM_MODEL_CONFIGS
 from utils.LLM import BaseLLM
 import traceback
 import time
