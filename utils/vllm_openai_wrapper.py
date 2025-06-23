@@ -30,6 +30,8 @@ class VLLMOpenAIWrapper:
             if isinstance(value, bool):
                 if value:
                     args.append(flag)
+            elif isinstance(value, dict):
+                args.extend([flag, json.dumps(value)])
             else:
                 args.extend([flag, str(value)])
 

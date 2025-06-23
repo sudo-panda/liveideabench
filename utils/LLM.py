@@ -136,14 +136,14 @@ class BaseLLM:
                 "top_p": 1.0,
             }
 
-            if addn_args.get("NOT_SUPPORTED", False):
-                raise NotImplementedError(f"Model {self.model_name} is supported on {MACHINE_NAME} by vllm")
-            
             addn_args = VLLM_MODEL_CONFIGS.get("DEFAULT").copy()
             addn_args.update(VLLM_MODEL_CONFIGS.get(self.model_name, {}))
 
+            if addn_args.get("NOT_SUPPORTED", False):
+                raise NotImplementedError(f"Model {self.model_name} is supported on {MACHINE_NAME} by vllm")
+            
             try:
-                self.client = VLLMOpenAIWrapper(model_name=self.model_name, port=8000)
+                self.client = VLLMOpenAIWrapper(model_name=self.model_name, port=8000, server_kwargs=addn_args)
             except Exception as e:
                 logger.error(f"Model: {self.model_name} Config: {addn_args}")
                 raise e
