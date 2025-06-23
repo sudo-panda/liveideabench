@@ -66,16 +66,16 @@ def init_database() -> None:
         idea_model TEXT NOT NULL,
         critic_models TEXT NOT NULL,
         idea TEXT NOT NULL,
-        raw_critiques TEXT NOT NULL,
-        parsed_scores TEXT,                   -- Scores stored in JSON format
-        parsed_reasonings TEXT,               -- Analysis stored in JSON format
-        critique_reasonings TEXT,             -- Reasoning process of the critic model
-        error TEXT,                           -- Potential error messages
         full_response TEXT NOT NULL,          -- Full response
         first_was_rejected INTEGER DEFAULT 0, -- Flag indicating if the model rejected the request initially
         first_reject_response TEXT,           -- Stores the reason for the initial rejection
+        idea_gen_config TEXT NOT NULL,        -- Configuration for idea gen in JSON format
         hallucination_scores TEXT,            -- Stores hallucination scores in JSON format
-        samples_for_hallucination TEXT        -- Stores samples for hallucination detection in JSON format
+        samples_for_hallucination TEXT,       -- Stores samples for hallucination detection in JSON format
+        raw_critiques TEXT NOT NULL,
+        parsed_scores TEXT,                   -- Scores stored in JSON format
+        critique_reasonings TEXT,             -- Reasoning process of the critic model
+        error TEXT                            -- Potential error messages
     )
     ''')
     
@@ -85,6 +85,127 @@ def init_database() -> None:
     
     conn.commit()
 
+def insert_idea(idea_data: Dict[str, Any]) -> int:
+    """Insert a new idea into the database
+
+    Args:
+        idea_data: Dictionary containing the idea data
+
+    Returns:
+        The ID of the newly inserted record
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    # Extract and process data
+    timestamp = datetime.now().isoformat()
+    prompt_input = idea_data.get('prompt_input', '')
+    idea_model = idea_data.get('idea_model', '')
+    idea = idea_data.get('idea', '')
+    full_response = idea_data.get('full_response', '')
+    first_was_rejected = idea_data.get('first_was_rejected', 0)
+    if isinstance(first_was_rejected, bool):
+        first_was_rejected = 1 if first_was_rejected else 0
+    first_reject_response = idea_data.get('first_reject_response')
+    idea_gen_config = json.dumps(idea_data.get('idea_gen_config', {}))
+    hallucination_scores = json.dumps(idea_data.get('hallucination_scores', {}))
+    samples_for_hallucination = json.dumps(idea_data.get('samples_for_hallucination', []))
+
+    assert prompt_input != "", "The prompt input must be provided"
+    assert idea_model != "", "The idea model must be provided"
+    assert idea != "", "The idea must be provided"
+    assert full_response != "", "The full response must be provided"
+
+    try:
+        cursor.execute('''
+        INSERT INTO results 
+        (timestamp, prompt_input, idea_model, idea, idea_gen_config, 
+         full_response, first_was_rejected, first_reject_response, 
+         hallucination_scores, samples_for_hallucination,
+         critic_models, raw_critiques, parsed_scores, critique_reasonings, error)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (timestamp, prompt_input, idea_model, idea, idea_gen_config, 
+              full_response, first_was_rejected, first_reject_response,
+              hallucination_scores, samples_for_hallucination,
+              "[]", "[]", "[]", "[]", "[]"))
+
+        conn.commit()
+        return cursor.lastrowid
+    except sqlite3.Error as e:
+        logger.error(f"Database insertion error: {str(e)}")
+        conn.rollback()
+        raise
+
+def update_critique(idea_id: int, critique_data: Dict[str, Any]) -> None:
+    """Update an existing idea with critique data
+
+    Args:
+        idea_id: The ID of the idea to update
+        critique_data: Dictionary containing the critique data
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    # Get exisiting critique data
+    cursor.execute('SELECT * FROM results WHERE id = ?', (idea_id,))
+    existing_data = cursor.fetchone()
+    if not existing_data:
+        logger.error(f"No record found with ID {idea_id}")
+        raise ValueError(f"No record found with ID {idea_id}")
+    
+    critic_models = json.loads(existing_data['critic_models'] if existing_data['critic_models'] else "[]")
+    raw_critiques = json.loads(existing_data['raw_critiques'] if existing_data['raw_critiques'] else "[]")
+    parsed_scores = json.loads(existing_data['parsed_scores'] if existing_data['parsed_scores'] else "[]")
+    critique_reasonings = json.loads(existing_data['critique_reasonings'] if existing_data['critique_reasonings'] else "[]")
+    errors = json.loads(existing_data['error'] if existing_data['error'] else "[]")
+    
+    
+    
+    # Extract and process data
+    critic_model = critique_data.get('critic_model', '')
+    raw_critique = critique_data.get('raw_critique', '')
+    parsed_score = critique_data.get('parsed_scores', {})
+    critique_reasoning = critique_data.get('critique_reasonings')
+    error = critique_data.get('error', '')
+
+    if error != "": 
+        assert critic_model != "", "The critic model must be provided"
+        assert raw_critique != "", "The raw critiques must be provided"
+        assert parsed_score != {}, "The parsed scores must be provided"
+
+        critic_models.append(critic_model)
+        raw_critiques.append(raw_critique)
+        parsed_scores.append(parsed_score)
+        critique_reasonings.append(critique_reasoning)
+
+        try:
+            cursor.execute('''
+            UPDATE results 
+            SET critic_models = ?, raw_critiques = ?, parsed_scores = ?, critique_reasonings = ?
+            WHERE id = ?
+            ''', (critic_models, raw_critiques, parsed_scores, critique_reasonings,
+                  idea_id))
+
+            conn.commit()
+        except sqlite3.Error as e:
+            logger.error(f"Database update error: {str(e)}")
+            conn.rollback()
+            raise
+    else:
+        errors.append(error)
+
+        try:
+            # Update errors column
+            cursor.execute('''
+            UPDATE results
+            SET error = ?
+            WHERE id = ?
+            ''', (json.dumps(errors), idea_id))
+            conn.commit()
+        except sqlite3.Error as e:
+            logger.error(f"Database update error: {str(e)}")
+            conn.rollback()
+            raise
 
 def save_result(result_data: Dict[str, Any]) -> int:
     """Save an evaluation result to the database
