@@ -3,6 +3,8 @@ import sqlite3
 import pandas as pd
 import json
 
+from .run import clean_text
+
 # Define the database file path
 DB_PATH = './data/ideabench.db'
 
@@ -31,6 +33,16 @@ def load_and_display_database():
                 df[json_col] = df[json_col].apply(
                     lambda x: json.loads(x) if pd.notna(x) and isinstance(x, str) else x
                 )
+        
+        # Clean text fields
+        df['idea'] = df['idea'].apply(lambda x: clean_text(x))
+        df['full_response'] = df['full_response'].apply(lambda x: clean_text(x))
+        df['raw_critiques'] = df['raw_critiques'].apply(
+            lambda x: [clean_text(i) if isinstance(i, str) else i for i in x] if isinstance(x, list) else clean_text(x)
+        )
+        df['critique_reasonings'] = df['critique_reasonings'].apply(
+            lambda x: [clean_text(i) if isinstance(i, str) else i for i in x] if isinstance(x, list) else clean_text(x)
+        )
 
         # Print basic statistics
         print(f"Total records in the database: {len(df)}")
