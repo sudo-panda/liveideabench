@@ -109,7 +109,6 @@ def save_result(result_data: Dict[str, Any]) -> int:
     critic_models = None
     raw_critiques = None
     parsed_scores = None
-    parsed_reasonings = None
     critique_reasonings = None
     error = None
     hallucination_scores = None
@@ -120,8 +119,6 @@ def save_result(result_data: Dict[str, Any]) -> int:
         raw_critiques = json.dumps(result_data['raw_critiques'])
     if 'parsed_scores' in result_data and result_data['parsed_scores']:
         parsed_scores = json.dumps(result_data['parsed_scores'])
-    if 'parsed_feedback' in result_data and result_data['parsed_feedback']:
-        parsed_reasonings = json.dumps(result_data['parsed_feedback'])
     if 'critique_reasonings' in result_data and result_data['critique_reasonings']:
         critique_reasonings = json.dumps(result_data['critique_reasonings'])
     if 'error' in result_data and result_data['error']:
@@ -141,12 +138,12 @@ def save_result(result_data: Dict[str, Any]) -> int:
         cursor.execute('''
         INSERT INTO results 
         (timestamp, prompt_input, idea_model, critic_models, idea, raw_critiques, 
-         parsed_scores, parsed_reasonings, critique_reasonings, error, full_response, 
+         parsed_scores, critique_reasonings, error, full_response, 
          first_was_rejected, first_reject_response, hallucination_scores, samples_for_hallucination)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             timestamp, prompt_input, idea_model, critic_models, idea, raw_critiques,
-            parsed_scores, parsed_reasonings, critique_reasonings, error, full_response, 
+            parsed_scores, critique_reasonings, error, full_response, 
             first_was_rejected, first_reject_response, hallucination_scores, samples_for_hallucination
         ))
         
@@ -237,12 +234,6 @@ def query_results(filters: Optional[Dict[str, Any]] = None,
         if result_dict.get('parsed_scores'):
             try:
                 result_dict['parsed_scores'] = json.loads(result_dict['parsed_scores'])
-            except json.JSONDecodeError:
-                pass
-                
-        if result_dict.get('parsed_reasonings'):
-            try:
-                result_dict['parsed_reasonings'] = json.loads(result_dict['parsed_reasoning'])
             except json.JSONDecodeError:
                 pass
 

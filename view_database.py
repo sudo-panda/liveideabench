@@ -25,8 +25,8 @@ def load_and_display_database():
 
         # Process JSON fields
         for json_col in ['critic_models', 'raw_critiques', 'parsed_scores', 
-                     'parsed_reasonings', 'critique_reasonings', 'error', 
-                     'hallucination_scores', 'samples_for_hallucination']:
+                         'critique_reasonings', 'error', 
+                         'hallucination_scores', 'samples_for_hallucination']:
             if json_col in df.columns:
                 df[json_col] = df[json_col].apply(
                     lambda x: json.loads(x) if pd.notna(x) and isinstance(x, str) else x
