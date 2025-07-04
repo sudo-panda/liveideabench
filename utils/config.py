@@ -51,6 +51,8 @@ class Config:
         
         # Default values
         self.default_provider = "vllm"
+
+        self.dataset = "idea_keywords"
         
         # Mapping from model names to providers
         self.model_provider_mapping = {
@@ -121,6 +123,12 @@ class Config:
         # No match found, return the default provider
         return self.default_provider
         
+    def set_dataset(self, dataset: str) -> None:
+        """Set the dataset"""
+        DATASETS = os.listdir("dataset_configs")
+        assert dataset in DATASETS, f"Unsupported dataset: {dataset}. Supported datasets are: {', '.join(DATASETS)}"
+        self.dataset = dataset
+
     def set_default_provider(self, provider: str) -> None:
         """Set the default provider"""
         if provider not in PROVIDER_NAMES:
