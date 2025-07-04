@@ -14,7 +14,6 @@ import random
 from typing import Dict, List, Optional, Union, Tuple, Any
 
 from openai import OpenAI
-import google.generativeai as genai
 from vllm import LLM, SamplingParams
 
 MACHINE_NAME = os.environ.get("MACHINE_NAME", "default")
@@ -81,6 +80,7 @@ class BaseLLM:
     def _setup_client(self) -> None:
         """Set up the client based on the provider"""
         if self.provider == "gemini":
+            import google.generativeai as genai
             # Set up Gemini API
             genai.configure(api_key=config.get_api_key("gemini"))
 
@@ -186,7 +186,7 @@ class BaseLLM:
         Returns:
             Gemini model's response text
         """
-
+        import google.generativeai as genai
         model = genai.GenerativeModel(model_name=self.model_name)
 
         # Build the prompt
