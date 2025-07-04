@@ -6,6 +6,10 @@ Contains general utility functions such as hash generation and timeout handling
 
 import hashlib
 import signal
+import logging
+from typing import Dict, List
+
+logger = logging.getLogger(__name__)
 
 # Generate a stable hash value, ensuring the same text always produces the same hash value
 def stable_hash(text):
@@ -61,6 +65,59 @@ def append_content_new(txt_path, content_new):
     """
     with open(txt_path, "a", encoding='utf-8') as f:
         f.write(content_new)
+
+def load_prompt_input(dataset_name: str = "proofnet") -> List[str]:
+    """Load prompt input from the specified dataset
+
+    Args:
+        dataset_name: The dataset to load prompts for
+
+    Returns:
+        List of prompt input
+    """
+    import importlib
+
+    try:
+        config_module = importlib.import_module(f"dataset_configs.{dataset_name}.config")
+        load_prompt_input_fn = config_module.load_prompt_input
+    except ImportError as e:
+        logger.error(f"Failed to import config module for dataset '{dataset_name}'")
+        raise e
+    except AttributeError as e:
+        logger.error(f"Config module for dataset '{dataset_name}' does not have 'load_prompt_input' function")
+        raise e
+
+    if not callable(load_prompt_input_fn):
+        raise TypeError(f"Function 'load_prompt_input' in dataset '{dataset_name}' is not callable")
+    
+    return load_prompt_input_fn()
+
+def load_prompts(dataset_name: str = "proofnet") -> Dict[str, Dict[str, str]]:
+    """Load prompt templates
+
+    Args:
+        dataset_name: The dataset to load prompts for
+
+    Returns:
+        Dictionary of prompt templates
+    """
+    import importlib
+
+    try:
+        config_module = importlib.import_module(f"dataset_configs.{dataset_name}.config")
+        load_prompts_fn = config_module.load_prompts
+    except ImportError as e:
+        logger.error(f"Failed to import config module for dataset '{dataset_name}'")
+        raise e
+    except AttributeError as e:
+        logger.error(f"Config module for dataset '{dataset_name}' does not have 'load_prompts' function")
+        raise e
+
+    if not callable(load_prompts_fn):
+        raise TypeError(f"Function 'load_prompts' in dataset '{dataset_name}' is not callable")
+    
+    return load_prompts_fn()
+
 
 def clean_text(text: str) -> str:
     """Clean text by removing unnecessary whitespace
