@@ -18,10 +18,11 @@ from huggingface_hub import whoami
 print("Hugging Face logged in as user:", whoami()["name"])
 
 # Custom modules
-from .utils.config import config
+from utils.config import config
 from utils.LLM import create_llm, parse_critique, is_response_rejected
 from utils.database import save_result, check_duplicate_entries, close_all_connections
-from .utils.config import CRITIC_MODELS, IDEA_MODELS
+from utils.config import CRITIC_MODELS, IDEA_MODELS
+from utils.utils import clean_text
 
 # Ensure directories exist
 os.makedirs('./logs', exist_ok=True)
@@ -85,21 +86,6 @@ def load_prompts(file_path: str = './utils/prompts.json') -> Dict[str, Dict[str,
     except Exception as e:
         logger.error(f"Failed to load prompt file: {str(e)}")
         raise
-
-
-def clean_text(text: str) -> str:
-    """Clean text by removing unnecessary whitespace
-
-    Args:
-        text: Raw text
-
-    Returns:
-        Cleaned text
-    """
-    # Remove newlines, carriage returns, and tabs
-    text = text.replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')
-    # Replace multiple spaces with a single space
-    return ' '.join(text.split())
 
 def run_cleanup(llm) -> None:
     llm.cleanup()

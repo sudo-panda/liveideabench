@@ -3,7 +3,7 @@ import sqlite3
 import pandas as pd
 import json
 
-from .run import clean_text
+from liveideabench.utils.utils import clean_text
 
 # Define the database file path
 DB_PATH = './data/ideabench.db'

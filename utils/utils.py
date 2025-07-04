@@ -61,3 +61,17 @@ def append_content_new(txt_path, content_new):
     """
     with open(txt_path, "a", encoding='utf-8') as f:
         f.write(content_new)
+
+def clean_text(text: str) -> str:
+    """Clean text by removing unnecessary whitespace
+
+    Args:
+        text: Raw text
+
+    Returns:
+        Cleaned text
+    """
+    # Remove newlines, carriage returns, and tabs
+    text = text.replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')
+    # Replace multiple spaces with a single space
+    return ' '.join(text.split())
