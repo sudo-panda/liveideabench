@@ -64,7 +64,6 @@ def init_database() -> None:
         timestamp TEXT NOT NULL,
         prompt_input TEXT NOT NULL,
         idea_model TEXT NOT NULL,
-        critic_models TEXT NOT NULL,
         idea TEXT NOT NULL,
         full_response TEXT NOT NULL,          -- Full response
         first_was_rejected INTEGER DEFAULT 0, -- Flag indicating if the model rejected the request initially
@@ -72,8 +71,9 @@ def init_database() -> None:
         idea_gen_config TEXT NOT NULL,        -- Configuration for idea gen in JSON format
         hallucination_scores TEXT,            -- Stores hallucination scores in JSON format
         samples_for_hallucination TEXT,       -- Stores samples for hallucination detection in JSON format
-        raw_critiques TEXT NOT NULL,
+        critic_models TEXT NOT NULL,
         parsed_scores TEXT,                   -- Scores stored in JSON format
+        raw_critiques TEXT NOT NULL,
         critique_reasonings TEXT,             -- Reasoning process of the critic model
         error TEXT                            -- Potential error messages
     )
@@ -164,11 +164,11 @@ def update_critique(idea_id: int, critique_data: Dict[str, Any]) -> None:
     # Extract and process data
     critic_model = critique_data.get('critic_model', '')
     raw_critique = critique_data.get('raw_critique', '')
-    parsed_score = critique_data.get('parsed_scores', {})
-    critique_reasoning = critique_data.get('critique_reasonings')
+    parsed_score = critique_data.get('parsed_score', {})
+    critique_reasoning = critique_data.get('critique_reasoning')
     error = critique_data.get('error', '')
 
-    if error != "": 
+    if error == "": 
         assert critic_model != "", "The critic model must be provided"
         assert raw_critique != "", "The raw critiques must be provided"
         assert parsed_score != {}, "The parsed scores must be provided"
@@ -183,7 +183,8 @@ def update_critique(idea_id: int, critique_data: Dict[str, Any]) -> None:
             UPDATE results 
             SET critic_models = ?, raw_critiques = ?, parsed_scores = ?, critique_reasonings = ?
             WHERE id = ?
-            ''', (critic_models, raw_critiques, parsed_scores, critique_reasonings,
+            ''', (json.dumps(critic_models), json.dumps(raw_critiques), 
+                  json.dumps(parsed_scores), json.dumps(critique_reasonings),
                   idea_id))
 
             conn.commit()
@@ -276,11 +277,11 @@ def save_result(result_data: Dict[str, Any]) -> int:
         raise
 
 
-def check_duplicate_entries(keyword: str, idea_model: str, limit: int = 6) -> bool:
-    """Check if a sufficient number of records exist for the same keyword and model combination
+def check_duplicate_entries(prompt_input: str, idea_model: str, idea_gen_config: str, limit: int = 6) -> bool:
+    """Check if a sufficient number of records exist for the same prompt_input and model combination
 
     Args:
-        keyword: The keyword
+        prompt_input: The prompt_input
         idea_model: The idea model name
         limit: The maximum record count limit
 
@@ -292,8 +293,8 @@ def check_duplicate_entries(keyword: str, idea_model: str, limit: int = 6) -> bo
     
     cursor.execute('''
     SELECT COUNT(*) as count FROM results 
-    WHERE prompt_input = ? AND idea_model = ?
-    ''', (keyword, idea_model))
+    WHERE prompt_input = ? AND idea_model = ? AND idea_gen_config = ?
+    ''', (prompt_input, idea_model, idea_gen_config))
     
     result = cursor.fetchone()
     count = result['count'] if result else 0
