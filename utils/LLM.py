@@ -157,7 +157,7 @@ class BaseLLM:
                 api_key=api_key
             )
 
-    def completion(self, prompt: str, system_prompt: Optional[str] = None) -> str:
+    def completion(self, prompt: str, system_prompt: Optional[str] = None, sampling_params: dict = None) -> str:
         """Execute non-streaming LLM completion request
 
         Args:
@@ -168,12 +168,14 @@ class BaseLLM:
             LLM's response text
         """
         if self.provider == "gemini":
+            assert sampling_params is None, "Gemini does not support sampling_params"
             return self._gemini_completion(prompt, system_prompt)
         elif self.provider == "vllm":
-            return self._vllm_completion(prompt, system_prompt)
+            return self._vllm_completion(prompt, system_prompt, sampling_params)
         elif self.provider == "vllm_openai":
-            return self._vllm_openai_completion(prompt, system_prompt)
+            return self._vllm_openai_completion(prompt, system_prompt, sampling_params)
         else:
+            assert sampling_params is None, "OpenRouter does not support sampling_params"
             return self._openai_compatible_completion(prompt, system_prompt)
 
     def _gemini_completion(self, prompt: str, system_prompt: Optional[str] = None) -> str:
@@ -196,7 +198,7 @@ class BaseLLM:
         response = model.generate_content(prompt)
         return response.text
 
-    def _vllm_completion(self, prompt: str, system_prompt: Optional[str] = None) -> str:
+    def _vllm_completion(self, prompt: str, system_prompt: Optional[str] = None, sampling_params: dict = None) -> str:
         """Execute VLLM API completion request
 
         Args:
@@ -210,10 +212,14 @@ class BaseLLM:
             full_prompt = [system_prompt, prompt]
         else:
             full_prompt = [prompt]
-        response = self.client.generate(full_prompt, SamplingParams(**self.sampling_params), use_tqdm=False)
+        
+        if sampling_params is None:
+            sampling_params = self.sampling_params
+
+        response = self.client.generate(full_prompt, SamplingParams(**sampling_params), use_tqdm=False)
         return response[0].outputs[0].text
     
-    def _vllm_openai_completion(self, prompt: str, system_prompt: Optional[str] = None) -> str:
+    def _vllm_openai_completion(self, prompt: str, system_prompt: Optional[str] = None, sampling_params: dict = None) -> str:
         """Execute VLLM OpenAI-compatible API completion request
 
         Args:
@@ -223,7 +229,12 @@ class BaseLLM:
         Returns:
             VLLM OpenAI-compatible model's response text
         """
-        response = self.client.generate(prompt=prompt, system_prompt=system_prompt, sampling_params=self.sampling_params)
+
+        if sampling_params is None:
+            sampling_params = self.sampling_params
+
+        response = self.client.generate(prompt=prompt, system_prompt=system_prompt, sampling_params=sampling_params)
+        
         return response["choices"][0]["message"]["content"]
 
     def _openai_compatible_completion(self, prompt: str, system_prompt: Optional[str] = None) -> str:
@@ -397,14 +408,14 @@ class IdeaLLM(BaseLLM):
         """
         super().__init__(model_name, provider)
         
-        if self.provider == "vllm":
+        if self.provider == "vllm" or self.provider == "vllm_openai":
             self.sampling_params = {
                 "temperature": 0.5,
                 "max_tokens": None,
                 "top_p": 0.95,
             }
 
-    def generate_idea(self, prompt: str, fallback_prompt: Optional[str] = None) -> Dict[str, str]:
+    def generate_idea(self, prompt: str, fallback_prompt: Optional[str] = None, sampling_params: dict = None) -> Dict[str, str]:
         """Generate scientific idea
 
         Args:
@@ -419,8 +430,12 @@ class IdeaLLM(BaseLLM):
             if fallback_prompt:
                 fallback_prompt = fallback_prompt + "\n\nYou MUST give your answer after **Final Idea:**"
 
+        if sampling_params is not None:
+            updated_sampling_params = self.sampling_params.copy()
+            updated_sampling_params.update(sampling_params)
+
         # First, try using the main prompt
-        response = self.completion(prompt)
+        response = self.completion(prompt, sampling_params=updated_sampling_params)
 
         # Handle response format
         if isinstance(response, tuple):
@@ -497,7 +512,7 @@ class CriticLLM(BaseLLM):
         """
         super().__init__(model_name, provider)
         
-        if self.provider == "vllm":
+        if self.provider == "vllm" or self.provider == "vllm_openai":
             self.sampling_params = {
                 "temperature": 0.0,
                 "max_tokens": None,
