@@ -8,7 +8,7 @@ import os
 from typing import Dict, List, Optional
 
 # Define the supported model providers
-PROVIDER_NAMES = ["openrouter", "ollama", "stepfun", "gemini", "aigcbest", "vllm", "default"]
+PROVIDER_NAMES = ["openrouter", "ollama", "stepfun", "gemini", "aigcbest", "vllm", "vllm_openai", "default"]
 
 # Define the critic models (stronger models)
 CRITIC_MODELS = [
@@ -19,9 +19,6 @@ CRITIC_MODELS = [
     "Qwen/Qwen2.5-14B-Instruct",
 
     "meta-llama/Llama-3.3-70B-Instruct",
-    "meta-llama/Meta-Llama-3-70B-Instruct",
-
-    "mistralai/Mistral-7B-Instruct-v0.3",
 ]
 
 IDEA_MODELS = [
@@ -35,11 +32,14 @@ IDEA_MODELS = [
     "Qwen/Qwen2-72B",
     "Qwen/Qwen2.5-VL-72B-Instruct",
 
+    "meta-llama/Meta-Llama-3-70B-Instruct",
     "meta-llama/Llama-4-Scout-17B-16E-Instruct",
 
     "microsoft/Phi-4-reasoning-plus",
 
     "tiiuae/falcon-40b-instruct",
+
+    "mistralai/Mistral-7B-Instruct-v0.3",
 ] + CRITIC_MODELS
 
 class Config:
@@ -66,6 +66,22 @@ class Config:
         }
 
         self.samples_for_hallucination = 1  # Number of samples to generate for hallucination detection
+
+        self.n_critics = 3  # Default number of critics to use for evaluation
+
+        self.n_prompt_input = 10  # Default number of prompt inputs to use for evaluation
+
+        self.n_diversity_samples = 5  # Default number of diversity samples to generate for each prompt input
+
+        self.temperature = 1  # Default temperature for model generation
+        
+        self.top_p = 0.9  # Default top_p for model generation
+
+        self.top_k = -1  # Default top_k for model generation
+
+        self.diversity_method = None  # Diversity method to use, can be set later
+
+        self.prompts = None  # Placeholder for prompts, can be set later
 
     def _load_api_keys(self) -> Dict[str, str]:
         """Load API keys from apikey file and environment variables"""
@@ -140,6 +156,50 @@ class Config:
         if num_samples <= 0:
             raise ValueError("Number of samples must be a positive integer")
         self.samples_for_hallucination = num_samples
+
+    def set_n_critics(self, n: int) -> None:
+        """Set the number of critics to use for evaluation"""
+        if n <= 0:
+            raise ValueError("Number of critics must be a positive integer")
+        self.n_critics = n
+
+    def set_n_prompt_input(self, n: int) -> None:
+        """Set the number of prompt inputs to use for evaluation"""
+        if n <= 0:
+            raise ValueError("Number of prompt inputs must be a positive integer")
+        self.n_prompt_input = n
+
+    def set_n_diversity_samples(self, n: int) -> None:
+        """Set the number of diversity samples to generate for each prompt input"""
+        if n <= 0:
+            raise ValueError("Number of diversity samples must be a positive integer")
+        self.n_diversity_samples = n
+
+    def set_temperature(self, temperature: float) -> None:
+        """Set the temperature for model generation"""
+        if not (0 <= temperature <= 2):
+            raise ValueError("Temperature must be between 0 and 2")
+        self.temperature = temperature
+
+    def set_top_p(self, top_p: float) -> None:
+        """Set the top_p for model generation"""
+        if not (0 <= top_p <= 1):
+            raise ValueError("top_p must be between 0 and 1")
+        self.top_p = top_p
+    
+    def set_top_k(self, top_k: int) -> None:
+        """Set the top_k for model generation"""
+        if top_k < -1:
+            raise ValueError("top_k must be a integer greater than or equal to -1")
+        self.top_k = top_k
+
+    def set_diversity_method(self, method: str) -> None:
+        """Set the diversity method to use"""
+        self.diversity_method = method
+
+    def set_prompts(self, prompts: Dict) -> None:
+        """Set the prompts to use for evaluation"""
+        self.prompts = prompts
 
 
 # Create a global config instance
