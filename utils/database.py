@@ -110,6 +110,11 @@ def insert_idea(idea_data: Dict[str, Any]) -> int:
     idea_gen_config = json.dumps(idea_data.get('idea_gen_config', {}))
     hallucination_scores = json.dumps(idea_data.get('hallucination_scores', {}))
     samples_for_hallucination = json.dumps(idea_data.get('samples_for_hallucination', []))
+    critic_models = json.dumps(idea_data.get('critic_models', []))
+    raw_critiques = json.dumps(idea_data.get('raw_critiques', []))
+    parsed_scores = json.dumps(idea_data.get('parsed_scores', []))
+    critique_reasonings = json.dumps(idea_data.get('critique_reasonings', []))
+    error = json.dumps(idea_data.get('critique_reasonings', []))
 
     assert prompt_input != "", "The prompt input must be provided"
     assert idea_model != "", "The idea model must be provided"
@@ -121,13 +126,13 @@ def insert_idea(idea_data: Dict[str, Any]) -> int:
         INSERT INTO results 
         (timestamp, prompt_input, idea_model, idea, idea_gen_config, 
          full_response, first_was_rejected, first_reject_response, 
-         hallucination_scores, samples_for_hallucination,
-         critic_models, raw_critiques, parsed_scores, critique_reasonings, error)
+         hallucination_scores, samples_for_hallucination, critic_models, 
+         raw_critiques, parsed_scores, critique_reasonings, error)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (timestamp, prompt_input, idea_model, idea, idea_gen_config, 
               full_response, first_was_rejected, first_reject_response,
-              hallucination_scores, samples_for_hallucination,
-              "[]", "[]", "[]", "[]", "[]"))
+              hallucination_scores, samples_for_hallucination, critic_models,
+              raw_critiques, parsed_scores, critique_reasonings, error))
 
         conn.commit()
         return cursor.lastrowid
@@ -173,7 +178,17 @@ def update_critique(idea_id: int, critique_data: Dict[str, Any]) -> None:
         assert raw_critique != "", "The raw critiques must be provided"
         assert parsed_score != {}, "The parsed scores must be provided"
 
-        critic_models.append(critic_model)
+        # Move the critic model to the position in the list that it corresponds to the appended parsed_score
+        rearraged_critic_models = []
+        for i in range(len(parsed_scores)):
+            rearraged_critic_models.append(critic_models[i])
+        
+        rearraged_critic_models.append(critic_model)
+
+        for critic in critic_models:
+            if critic not in rearraged_critic_models:
+                rearraged_critic_models.append(critic)
+
         raw_critiques.append(raw_critique)
         parsed_scores.append(parsed_score)
         critique_reasonings.append(critique_reasoning)
@@ -183,7 +198,7 @@ def update_critique(idea_id: int, critique_data: Dict[str, Any]) -> None:
             UPDATE results 
             SET critic_models = ?, raw_critiques = ?, parsed_scores = ?, critique_reasonings = ?
             WHERE id = ?
-            ''', (json.dumps(critic_models), json.dumps(raw_critiques), 
+            ''', (json.dumps(rearraged_critic_models), json.dumps(raw_critiques), 
                   json.dumps(parsed_scores), json.dumps(critique_reasonings),
                   idea_id))
 
@@ -193,20 +208,51 @@ def update_critique(idea_id: int, critique_data: Dict[str, Any]) -> None:
             conn.rollback()
             raise
     else:
+        assert critic_model != "", "The critic model must be provided"
         errors.append(error)
+        critic_models.remove(critic_model)  # Remove the critic model if there was an error
 
         try:
             # Update errors column
             cursor.execute('''
             UPDATE results
-            SET error = ?
+            SET error = ?, critic_models = ?
             WHERE id = ?
-            ''', (json.dumps(errors), idea_id))
+            ''', (json.dumps(errors), json.dumps(critic_models),
+                  idea_id))
             conn.commit()
         except sqlite3.Error as e:
             logger.error(f"Database update error: {str(e)}")
             conn.rollback()
             raise
+
+def reset_critics(idea_id: int, new_critic_models: List[str], parsed_scores: List[Dict] = [],
+                  raw_critiques: List[str] = [], critique_reasonings: List[str] = []) -> None:
+    """Update an existing idea with critique data
+
+    Args:
+        idea_id: The ID of the idea to update
+        critique_data: Dictionary containing the critique data
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    try:
+        cursor.execute('''
+        UPDATE results 
+        SET critic_models = ?, raw_critiques = ?,
+            parsed_scores = ?, critique_reasonings = ?
+        WHERE id = ?
+        ''', (json.dumps(new_critic_models), json.dumps(raw_critiques), 
+                json.dumps(parsed_scores), json.dumps(critique_reasonings),
+                idea_id))
+
+        conn.commit()
+    except sqlite3.Error as e:
+        logger.error(f"Database update error: {str(e)}")
+        conn.rollback()
+        raise
+
 
 def save_result(result_data: Dict[str, Any]) -> int:
     """Save an evaluation result to the database
@@ -294,7 +340,8 @@ def check_duplicate_entries(prompt_input: str, idea_model: str, idea_gen_config:
     cursor.execute('''
     SELECT COUNT(*) as count FROM results 
     WHERE prompt_input = ? AND idea_model = ? AND idea_gen_config = ?
-    ''', (prompt_input, idea_model, idea_gen_config))
+    ''', (prompt_input, idea_model, json.dumps(idea_gen_config))
+    )
     
     result = cursor.fetchone()
     count = result['count'] if result else 0
@@ -415,24 +462,6 @@ def export_to_csv(output_path: str) -> None:
     logger.info(f"Successfully exported data to {output_path}")
 
 
-def check_and_add_column() -> None:
-    """Check and add new columns to the existing table"""
-    conn = get_connection()
-    cursor = conn.cursor()
-    
-    # Get the current table structure
-    cursor.execute("PRAGMA table_info(results)")
-    columns = [column[1] for column in cursor.fetchall()]
-    
-    # Check if the critique_reasoning column exists
-    if 'critique_reasoning' not in columns:
-        logger.info("Adding critique_reasoning column to results table")
-        cursor.execute("ALTER TABLE results ADD COLUMN critique_reasoning TEXT")
-        conn.commit()
-
 
 # Initialize the database
 init_database()
-
-# Check and update table structure
-check_and_add_column()
