@@ -9,28 +9,33 @@ CLARIDEN_VLLM_MODEL_CONFIGS = {
         "dtype": "bfloat16",
         "max_model_len": 8192,
         "gpu_memory_utilization": 0.8,
+        "reasoning_parser": "deepseek_r1",
     },
     "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B": {
         "tensor_parallel_size": 4,
         "dtype": "bfloat16",
         "max_model_len": 4096,
         "gpu_memory_utilization": 0.9,
+        "reasoning_parser": "deepseek_r1",
     },
     "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B": {
         "tensor_parallel_size": 4,
         "max_model_len": 2048,
         "dtype": "bfloat16",
         "gpu_memory_utilization": 0.90,
+        "reasoning_parser": "deepseek_r1",
     },
     "deepseek-ai/DeepSeek-R1-Distill-Llama-8B": {
         "gpu_memory_utilization": 0.9,
         "max_model_len": 4096,
         "dtype": "bfloat16",
+        "reasoning_parser": "deepseek_r1",
     },
     "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B": {
         "gpu_memory_utilization": 0.9,
         "max_model_len": 4096,
         "dtype": "bfloat16",
+        "reasoning_parser": "deepseek_r1",
     },
 
 
@@ -46,6 +51,7 @@ CLARIDEN_VLLM_MODEL_CONFIGS = {
             "original_max_position_embeddings":32768
         },
         "gpu_memory_utilization": 0.9,
+        "reasoning_parser": "qwen3",
     },
     "Qwen/Qwen3-14B": {
         "tensor_parallel_size": 4,
@@ -57,6 +63,7 @@ CLARIDEN_VLLM_MODEL_CONFIGS = {
             "original_max_position_embeddings":32768
         },
         "gpu_memory_utilization": 0.9,
+        "reasoning_parser": "qwen3",
     },
     "Qwen/Qwen3-8B": {
         "tensor_parallel_size": 2,
@@ -68,6 +75,7 @@ CLARIDEN_VLLM_MODEL_CONFIGS = {
             "original_max_position_embeddings":32768
         },
         "gpu_memory_utilization": 0.85,
+        "reasoning_parser": "qwen3",
     },
     "Qwen/Qwen3-30B-A3B": {
         "NOT_SUPPORTED": True,
@@ -81,6 +89,7 @@ CLARIDEN_VLLM_MODEL_CONFIGS = {
             "original_max_position_embeddings":32768
         },
         "gpu_memory_utilization": 0.9,
+        "reasoning_parser": "qwen3",
     },
     "Qwen/Qwen3-235B-A22B": {
         "NOT_SUPPORTED": True,
@@ -93,7 +102,8 @@ CLARIDEN_VLLM_MODEL_CONFIGS = {
             "factor": 4.0,
             "original_max_position_embeddings": 32768
         },
-        "gpu_memory_utilization": 0.9
+        "gpu_memory_utilization": 0.9,
+        "reasoning_parser": "qwen3",
     },
     "Qwen/Qwen2.5-72B-Instruct": {
         "NOT_SUPPORTED": True,
@@ -150,6 +160,7 @@ CLARIDEN_VLLM_MODEL_CONFIGS = {
         "enforce_eager": False,
     },
     "Qwen/Qwen2.5-14B-Instruct": {
+        "tensor_parallel_size": 4,
         "gpu_memory_utilization": 0.92,
         "max_model_len": 4096,
     },
@@ -270,28 +281,33 @@ HELIOS_VLLM_MODEL_CONFIGS = {
         "dtype": "bfloat16",
         "max_model_len": 8192,
         "gpu_memory_utilization": 0.8,
+        "reasoning_parser": "deepseek_r1",
     },
     "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B": {
         "tensor_parallel_size": 4,
         "dtype": "bfloat16",
         "max_model_len": 4096,
         "gpu_memory_utilization": 0.9,
+        "reasoning_parser": "deepseek_r1",
     },
     "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B": {
         "tensor_parallel_size": 4,
         "max_model_len": 2048,
         "dtype": "bfloat16",
         "gpu_memory_utilization": 0.90,
+        "reasoning_parser": "deepseek_r1",
     },
     "deepseek-ai/DeepSeek-R1-Distill-Llama-8B": {
         "gpu_memory_utilization": 0.9,
         "max_model_len": 4096,
         "dtype": "bfloat16",
+        "reasoning_parser": "deepseek_r1",
     },
     "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B": {
         "gpu_memory_utilization": 0.9,
         "max_model_len": 4096,
         "dtype": "bfloat16",
+        "reasoning_parser": "deepseek_r1",
     },
 
 
@@ -307,6 +323,7 @@ HELIOS_VLLM_MODEL_CONFIGS = {
             "original_max_position_embeddings":32768
         },
         "gpu_memory_utilization": 0.9,
+        "reasoning_parser": "qwen3",
     },
     "Qwen/Qwen3-14B": {
         "tensor_parallel_size": 4,
@@ -318,6 +335,7 @@ HELIOS_VLLM_MODEL_CONFIGS = {
             "original_max_position_embeddings":32768
         },
         "gpu_memory_utilization": 0.9,
+        "reasoning_parser": "qwen3",
     },
     "Qwen/Qwen3-8B": {
         "tensor_parallel_size": 2,
@@ -329,6 +347,7 @@ HELIOS_VLLM_MODEL_CONFIGS = {
             "original_max_position_embeddings":32768
         },
         "gpu_memory_utilization": 0.85,
+        "reasoning_parser": "qwen3",
     },
     "Qwen/Qwen3-30B-A3B": {
         "NOT_SUPPORTED": True,
@@ -342,6 +361,7 @@ HELIOS_VLLM_MODEL_CONFIGS = {
             "original_max_position_embeddings":32768
         },
         "gpu_memory_utilization": 0.9,
+        "reasoning_parser": "qwen3",
     },
     "Qwen/Qwen3-235B-A22B": {
         "NOT_SUPPORTED": True,
@@ -354,7 +374,8 @@ HELIOS_VLLM_MODEL_CONFIGS = {
             "factor": 4.0,
             "original_max_position_embeddings": 32768
         },
-        "gpu_memory_utilization": 0.9
+        "gpu_memory_utilization": 0.9,
+        "reasoning_parser": "qwen3",
     },
     "Qwen/Qwen2.5-72B-Instruct": {
         "NOT_SUPPORTED": True,
