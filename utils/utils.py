@@ -130,5 +130,9 @@ def clean_text(text: str) -> str:
     """
     # Remove newlines, carriage returns, and tabs
     text = text.replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')
+    # Remove invalid UTF-8 characters
+    text = text.encode('utf-8', 'ignore').decode('utf-8', 'ignore')
+    # Remove leading and trailing whitespace
+    text = text.strip()
     # Replace multiple spaces with a single space
     return ' '.join(text.split())
