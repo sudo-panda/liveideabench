@@ -387,34 +387,9 @@ def query_results(filters: Optional[Dict[str, Any]] = None,
     for row in cursor.fetchall():
         result_dict = dict(row)
 
-        if result_dict.get('critic_models'):
+        if result_dict.get('idea_gen_config'):
             try:
-                result_dict['critic_models'] = json.loads(result_dict['critic_models'])
-            except json.JSONDecodeError:
-                pass
-
-        if result_dict.get('raw_critiques'):
-            try:
-                result_dict['raw_critiques'] = json.loads(result_dict['raw_critiques'])
-            except json.JSONDecodeError:
-                pass
-        
-        # Parse JSON fields
-        if result_dict.get('parsed_scores'):
-            try:
-                result_dict['parsed_scores'] = json.loads(result_dict['parsed_scores'])
-            except json.JSONDecodeError:
-                pass
-
-        if result_dict.get('critique_reasonings'):
-            try:
-                result_dict['critique_reasonings'] = json.loads(result_dict['critique_reasonings'])
-            except json.JSONDecodeError:
-                pass
-
-        if result_dict.get('error'):
-            try:
-                result_dict['error'] = json.loads(result_dict['error'])
+                result_dict['idea_gen_config'] = json.loads(result_dict['idea_gen_config'])
             except json.JSONDecodeError:
                 pass
 
@@ -427,6 +402,37 @@ def query_results(filters: Optional[Dict[str, Any]] = None,
         if result_dict.get('samples_for_hallucination'):
             try:
                 result_dict['samples_for_hallucination'] = json.loads(result_dict['samples_for_hallucination'])
+            except json.JSONDecodeError:
+                pass
+
+        if result_dict.get('critic_models'):
+            try:
+                result_dict['critic_models'] = json.loads(result_dict['critic_models'])
+            except json.JSONDecodeError:
+                pass
+
+        # Parse JSON fields
+        if result_dict.get('parsed_scores'):
+            try:
+                result_dict['parsed_scores'] = json.loads(result_dict['parsed_scores'])
+            except json.JSONDecodeError:
+                pass
+
+        if result_dict.get('raw_critiques'):
+            try:
+                result_dict['raw_critiques'] = json.loads(result_dict['raw_critiques'])
+            except json.JSONDecodeError:
+                pass
+
+        if result_dict.get('critique_reasonings'):
+            try:
+                result_dict['critique_reasonings'] = json.loads(result_dict['critique_reasonings'])
+            except json.JSONDecodeError:
+                pass
+
+        if result_dict.get('error'):
+            try:
+                result_dict['error'] = json.loads(result_dict['error'])
             except json.JSONDecodeError:
                 pass
                 
