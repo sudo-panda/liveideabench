@@ -323,7 +323,7 @@ def save_result(result_data: Dict[str, Any]) -> int:
         raise
 
 
-def check_duplicate_entries(prompt_input: str, idea_model: str, idea_gen_config: str, limit: int = 6) -> bool:
+def get_no_of_entries(prompt_input: str, idea_model: str, idea_gen_config: Dict) -> int:
     """Check if a sufficient number of records exist for the same prompt_input and model combination
 
     Args:
@@ -332,7 +332,7 @@ def check_duplicate_entries(prompt_input: str, idea_model: str, idea_gen_config:
         limit: The maximum record count limit
 
     Returns:
-        True if the record count meets or exceeds the limit, False otherwise
+        The number of existing entries
     """
     conn = get_connection()
     cursor = conn.cursor()
@@ -346,7 +346,7 @@ def check_duplicate_entries(prompt_input: str, idea_model: str, idea_gen_config:
     result = cursor.fetchone()
     count = result['count'] if result else 0
     
-    return count >= limit
+    return count
 
 
 def query_results(filters: Optional[Dict[str, Any]] = None, 
