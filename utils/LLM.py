@@ -79,6 +79,7 @@ class BaseLLM:
 
     def _setup_client(self) -> None:
         """Set up the client based on the provider"""
+        self.parser = None  # Initialize parser to None, will be set for vllm provider
         if self.provider == "gemini":
             import google.generativeai as genai
             # Set up Gemini API
@@ -126,6 +127,31 @@ class BaseLLM:
             try:
                 # Initialize the VLLM client
                 self.client = LLM(model=self.model_name, disable_log_stats=True, **addn_args)
+                
+
+                reasoning_parser = addn_args.get("reasoning_parser", "")
+                if "deepseek_r1" in reasoning_parser:
+                    def parser(text):
+                        # Split at the last occurrence of </think>
+                        if "</think>" in text:
+                            last_idx = text.rfind("</think>")
+                            reasoning = text[:last_idx]
+                            content = text[last_idx + len("</think>"):].strip()
+                            # Remove all <think> and </think> tags from reasoning
+                            reasoning = re.sub(r"</?think>", "", reasoning).strip()
+                            print(f"Reasoning: {reasoning}, Content: {content}")
+                            return reasoning, content
+                        else:
+                            return None, text
+
+                    self.parser = parser
+                elif "qwen3" in reasoning_parser:
+                    from transformers import AutoTokenizer
+                    from vllm.reasoning.qwen3_reasoning_parser import Qwen3ReasoningParser
+
+                    tokenizer = AutoTokenizer.from_pretrained(self.model_name)
+                    parser = Qwen3ReasoningParser(tokenizer)
+                    self.parser = lambda x: parser.extract_reasoning_content(x, request=None)
             except Exception as e:
                 logger.error(f"Model: {self.model_name} Config: {addn_args}")
                 raise e
@@ -217,7 +243,14 @@ class BaseLLM:
             sampling_params = self.sampling_params
 
         response = self.client.generate(full_prompt, SamplingParams(**sampling_params), use_tqdm=False)
-        return response[0].outputs[0].text
+        if self.parser:
+            logging.info(f"Using reasoning parser on: {response[0].outputs[0].text}")
+            # Extract reasoning and content using the parser
+            reasoning, content = self.parser(response[0].outputs[0].text)
+            logging.info(f"Reasoning: {reasoning}, Content: {content}")
+            return (content, reasoning)
+        else:
+            return response[0].outputs[0].text
     
     def _vllm_openai_completion(self, prompt: str, system_prompt: Optional[str] = None, sampling_params: dict = None) -> str:
         """Execute VLLM OpenAI-compatible API completion request
