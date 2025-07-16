@@ -22,6 +22,8 @@ if MACHINE_NAME == "clariden":
     from .vllm_gh200 import CLARIDEN_VLLM_MODEL_CONFIGS as VLLM_MODEL_CONFIGS
 elif MACHINE_NAME == "helios":
     from .vllm_gh200 import HELIOS_VLLM_MODEL_CONFIGS as VLLM_MODEL_CONFIGS
+else:
+    raise NotImplementedError(f"Machine {MACHINE_NAME} is not supported for VLLM model configurations")
 
 from .vllm_openai_wrapper import VLLMOpenAIWrapper
 import random
