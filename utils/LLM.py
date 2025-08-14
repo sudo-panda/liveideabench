@@ -141,7 +141,7 @@ class BaseLLM:
                             content = text[last_idx + len("</think>"):].strip()
                             # Remove all <think> and </think> tags from reasoning
                             reasoning = re.sub(r"</?think>", "", reasoning).strip()
-                            print(f"Reasoning: {reasoning}, Content: {content}")
+                            logging.info(f"Reasoning: {reasoning}, Content: {content}")
                             return reasoning, content
                         else:
                             return None, text
@@ -475,12 +475,10 @@ class IdeaLLM(BaseLLM):
         # Handle response format
         if isinstance(response, tuple):
             idea = response[0]
-            full_response = response[1]
+            reasoning = response[1]
+            full_response = f"Reasoning: {reasoning}\n\nContent: {idea}" if reasoning is None else idea
 
-            print('='*40)
-            print('idea len: ',len(idea))
-            print('full_response len: ',len(full_response))
-            print('='*40)
+            logging.info(f"idea len: {(len(idea) if idea else 'N/A')} \tfull_response len: {(len(full_response) if full_response else 'N/A')}")
 
             if len(idea) < 10:
                 raise ValueError("Generated idea is too short, the model might have rejected the request")
@@ -507,7 +505,8 @@ class IdeaLLM(BaseLLM):
             # Handle fallback response
             if isinstance(fallback_response, tuple):
                 fallback_idea = fallback_response[0]
-                fallback_full = fallback_response[1]
+                reasoning = fallback_response[1]
+                fallback_full = f"Reasoning: {reasoning}\n\nContent: {idea}" if reasoning is None else idea
             else:
                 # For models with special formatting, extract the final idea
                 if "qwq-32b-preview" in self.model_name.lower():

@@ -79,7 +79,8 @@ class Config:
 
         self.top_k = -1  # Default top_k for model generation
 
-        self.diversity_method = None  # Diversity method to use, can be set later
+        self.diversity_method: str | None = None  # Diversity method to use, can be set later
+        self.diversity_value: int | float | None = None # Value for diversity method, can be set later
 
         self.prompts = None  # Placeholder for prompts, can be set later
 
@@ -193,13 +194,25 @@ class Config:
             raise ValueError("top_k must be a integer greater than or equal to -1")
         self.top_k = top_k
 
-    def set_diversity_method(self, method: str) -> None:
-        """Set the diversity method to use"""
-        self.diversity_method = method
-
     def set_prompts(self, prompts: Dict) -> None:
         """Set the prompts to use for evaluation"""
         self.prompts = prompts
+
+    @property
+    def diversity_metric(self) -> str:
+        """Get the diversity method as a string"""
+        assert self.diversity_method is not None, "Diversity method is not set"
+
+        diversity_short_mapping = {
+            "temperature": "temp",
+            "top_p": "topp",
+            "top_k": "topk",
+            "ood": "ood"
+        }
+
+        diversity_short_str = diversity_short_mapping.get(self.diversity_method, self.diversity_method)
+
+        return f"{diversity_short_str}:{self.diversity_value}" if self.diversity_value else diversity_short_str
 
 
 # Create a global config instance

@@ -65,6 +65,8 @@ def init_database() -> None:
         prompt_input TEXT NOT NULL,
         idea_model TEXT NOT NULL,
         idea TEXT NOT NULL,
+        dataset TEXT,                         -- Dataset used for the idea generation
+        diversity_metric TEXT,                -- Diversity method used for idea generation
         full_response TEXT NOT NULL,          -- Full response
         first_was_rejected INTEGER DEFAULT 0, -- Flag indicating if the model rejected the request initially
         first_reject_response TEXT,           -- Stores the reason for the initial rejection
@@ -102,6 +104,8 @@ def insert_idea(idea_data: Dict[str, Any]) -> int:
     prompt_input = idea_data.get('prompt_input', '')
     idea_model = idea_data.get('idea_model', '')
     idea = idea_data.get('idea', '')
+    dataset = idea_data.get('dataset')
+    diversity_metric = idea_data.get('diversity_metric')
     full_response = idea_data.get('full_response', '')
     first_was_rejected = idea_data.get('first_was_rejected', 0)
     if isinstance(first_was_rejected, bool):
@@ -124,13 +128,13 @@ def insert_idea(idea_data: Dict[str, Any]) -> int:
     try:
         cursor.execute('''
         INSERT INTO results 
-        (timestamp, prompt_input, idea_model, idea, idea_gen_config, 
-         full_response, first_was_rejected, first_reject_response, 
+        (timestamp, prompt_input, idea_model, idea, dataset, diversity_metric,
+         idea_gen_config, full_response, first_was_rejected, first_reject_response, 
          hallucination_scores, samples_for_hallucination, critic_models, 
          raw_critiques, parsed_scores, critique_reasonings, error)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', (timestamp, prompt_input, idea_model, idea, idea_gen_config, 
-              full_response, first_was_rejected, first_reject_response,
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', (timestamp, prompt_input, idea_model, idea, dataset, diversity_metric,
+              idea_gen_config, full_response, first_was_rejected, first_reject_response,
               hallucination_scores, samples_for_hallucination, critic_models,
               raw_critiques, parsed_scores, critique_reasonings, error))
 
@@ -323,7 +327,7 @@ def save_result(result_data: Dict[str, Any]) -> int:
         raise
 
 
-def get_no_of_entries(prompt_input: str, idea_model: str, idea_gen_config: Dict) -> int:
+def get_no_of_entries(prompt_input: str, idea_model: str, dataset: str, diversity_metric: str) -> int:
     """Check if a sufficient number of records exist for the same prompt_input and model combination
 
     Args:
@@ -339,8 +343,8 @@ def get_no_of_entries(prompt_input: str, idea_model: str, idea_gen_config: Dict)
     
     cursor.execute('''
     SELECT COUNT(*) as count FROM results 
-    WHERE prompt_input = ? AND idea_model = ? AND idea_gen_config = ?
-    ''', (prompt_input, idea_model, json.dumps(idea_gen_config))
+    WHERE prompt_input = ? AND idea_model = ? AND dataset = ? AND diversity_metric = ?
+    ''', (prompt_input, idea_model, dataset, diversity_metric)
     )
     
     result = cursor.fetchone()
@@ -369,7 +373,7 @@ def query_results(filters: Optional[Dict[str, Any]] = None,
     if filters:
         conditions = []
         for key, value in filters.items():
-            if key in ['prompt_input', 'idea_model', 'critic_models', 'first_was_rejected']:
+            if key in ['prompt_input', 'idea_model', 'critic_models', 'first_was_rejected', 'dataset', 'diversity_metric']:
                 conditions.append(f"{key} = ?")
                 params.append(value)
         
@@ -440,6 +444,71 @@ def query_results(filters: Optional[Dict[str, Any]] = None,
     
     return results
 
+def update_result(idea_id: int, update_data: Dict[str, Any]) -> None:
+    """Update an existing result in the database
+
+    Args:
+        idea_id: The ID of the result to update
+        update_data: Dictionary containing the fields to update
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    if 'idea_gen_config' in update_data:
+        update_data['idea_gen_config'] = json.dumps(update_data['idea_gen_config'])
+    if 'hallucination_scores' in update_data:
+        update_data['hallucination_scores'] = json.dumps(update_data['hallucination_scores'])
+    if 'samples_for_hallucination' in update_data:
+        update_data['samples_for_hallucination'] = json.dumps(update_data['samples_for_hallucination'])
+    if 'critic_models' in update_data:
+        update_data['critic_models'] = json.dumps(update_data['critic_models'])
+    if 'parsed_scores' in update_data:
+        update_data['parsed_scores'] = json.dumps(update_data['parsed_scores'])
+    if 'raw_critiques' in update_data:
+        update_data['raw_critiques'] = json.dumps(update_data['raw_critiques'])
+    if 'critique_reasonings' in update_data:
+        update_data['critique_reasonings'] = json.dumps(update_data['critique_reasonings'])
+    if 'error' in update_data:
+        update_data['error'] = json.dumps(update_data['error'])
+        
+    if 'id' in update_data:
+        del update_data['id']
+
+    set_clause = ", ".join([f"{key} = ?" for key in update_data.keys()])
+    params = list(update_data.values())
+    params.append(idea_id)
+    
+    query = f"UPDATE results SET {set_clause} WHERE id = ?"
+    
+    try:
+        cursor.execute(query, params)
+        conn.commit()
+    except sqlite3.Error as e:
+        logger.error(f"Database update error: {str(e)}")
+        conn.rollback()
+        raise
+
+def remove_ids(idea_ids: List[int]) -> None:
+    """Remove entries with specified IDs from the database
+
+    Args:
+        idea_ids: List of IDs to remove
+    """
+    if not idea_ids:
+        return
+    
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    placeholders = ', '.join(['?'] * len(idea_ids))
+    
+    try:
+        cursor.execute(f'DELETE FROM results WHERE id IN ({placeholders})', idea_ids)
+        conn.commit()
+    except sqlite3.Error as e:
+        logger.error(f"Database deletion error: {str(e)}")
+        conn.rollback()
+        raise
 
 def export_to_csv(output_path: str) -> None:
     """Export the database to a CSV file
@@ -455,7 +524,7 @@ def export_to_csv(output_path: str) -> None:
     df = pd.read_sql_query("SELECT * FROM results", conn)
     
     # Process JSON fields
-    for json_col in ['critic_models', 'raw_critiques', 'parsed_scores', 
+    for json_col in ['idea_gen_config', 'critic_models', 'raw_critiques', 'parsed_scores', 
                      'parsed_reasonings', 'critique_reasonings', 'error', 
                      'hallucination_scores', 'samples_for_hallucination']:
         if json_col in df.columns:
@@ -468,6 +537,25 @@ def export_to_csv(output_path: str) -> None:
     logger.info(f"Successfully exported data to {output_path}")
 
 
+def check_and_add_column() -> None:
+    """Check and add new columns to the existing table"""
+    conn = get_connection()
+    cursor = conn.cursor()
+    
+    # Get the current table structure
+    cursor.execute("PRAGMA table_info(results)")
+    columns = [column[1] for column in cursor.fetchall()]
+
+    # Check if the dataset column exists
+    if 'dataset' not in columns:
+        logger.info("Adding dataset column to results table")
+        cursor.execute("ALTER TABLE results ADD COLUMN dataset TEXT")
+        conn.commit()
+    if 'diversity_metric' not in columns:
+        logger.info("Adding diversity_metric column to results table")
+        cursor.execute("ALTER TABLE results ADD COLUMN diversity_metric TEXT")
+        conn.commit()
 
 # Initialize the database
 init_database()
+check_and_add_column()
